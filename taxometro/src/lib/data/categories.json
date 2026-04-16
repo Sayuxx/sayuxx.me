@@ -1,0 +1,72 @@
+[
+	{
+		"id": "electronics",
+		"label": "Eletrônicos",
+		"description": "Câmeras, celulares, componentes, fones de ouvido"
+	},
+	{
+		"id": "figures_toys",
+		"label": "Figures / Brinquedos",
+		"description": "Action figures, nendoroids, bonecos, modelos"
+	},
+	{
+		"id": "manga_books",
+		"label": "Mangás / Livros",
+		"description": "Mangás, light novels, livros, artbooks"
+	},
+	{
+		"id": "clothing",
+		"label": "Roupas / Tecidos",
+		"description": "Camisetas, kimonos, tecidos, cosplay"
+	},
+	{
+		"id": "cosmetics",
+		"label": "Cosméticos",
+		"description": "Maquiagem, skincare, perfumes japoneses"
+	},
+	{
+		"id": "food",
+		"label": "Alimentos",
+		"description": "Snacks, doces, temperos, chás"
+	},
+	{
+		"id": "games",
+		"label": "Games / Consoles",
+		"description": "Jogos, consoles, acessórios de gaming"
+	},
+	{
+		"id": "music_media",
+		"label": "Música / Mídia",
+		"description": "CDs, vinis, Blu-rays, DVDs"
+	},
+	{
+		"id": "stationery",
+		"label": "Papelaria",
+		"description": "Canetas, cadernos, material de arte"
+	},
+	{
+		"id": "kitchenware",
+		"label": "Utensílios de Cozinha",
+		"description": "Facas, panelas, louças, bento boxes"
+	},
+	{
+		"id": "health",
+		"label": "Saúde / Suplementos",
+		"description": "Suplementos, vitaminas, produtos de saúde"
+	},
+	{
+		"id": "sports",
+		"label": "Esportes",
+		"description": "Equipamentos esportivos, artes marciais"
+	},
+	{
+		"id": "accessories",
+		"label": "Acessórios",
+		"description": "Relógios, bolsas, chaveiros, bijuteria"
+	},
+	{
+		"id": "other",
+		"label": "Outros",
+		"description": "Produtos que não se encaixam nas categorias acima"
+	}
+]

@@ -1,0 +1,15 @@
+{
+	"exchangeRates": {
+		"jpyToBrl": 0.0374,
+		"jpyToUsd": 0.0067,
+		"lastUpdated": "2026-04-16"
+	},
+	"taxes": {
+		"iiRateLow": 0.20,
+		"iiRateHigh": 0.60,
+		"iiDeductionUSD": 20,
+		"cifThresholdUSD": 50,
+		"icmsRate": 0.17,
+		"iofRate": 0.035
+	}
+}
