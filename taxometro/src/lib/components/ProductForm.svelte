@@ -5,17 +5,19 @@
 
 	let name = $state('');
 	let category = $state<ProductCategory>('electronics');
-	let priceJPY = $state<number | ''>('');
+	let priceJPY = $state('');
 	let quantity = $state(1);
 	let weightGrams = $state<number | ''>('');
 
+	const priceJPYValue = $derived(Number(priceJPY.replace(/\D/g, '')) || 0);
+
 	function handleSubmit() {
-		if (!name.trim() || !priceJPY || !weightGrams) return;
+		if (!name.trim() || priceJPYValue <= 0 || !weightGrams) return;
 
 		addProduct({
 			name: name.trim(),
 			category,
-			priceJPY: Number(priceJPY),
+			priceJPY: priceJPYValue,
 			quantity,
 			weightGrams: Number(weightGrams)
 		});
@@ -26,7 +28,7 @@
 		weightGrams = '';
 	}
 
-	const isValid = $derived(name.trim() !== '' && priceJPY !== '' && Number(priceJPY) > 0 && weightGrams !== '' && Number(weightGrams) > 0);
+	const isValid = $derived(name.trim() !== '' && priceJPYValue > 0 && weightGrams !== '' && Number(weightGrams) > 0);
 
 	const inputClass = 'w-full rounded-md border border-ctp-surface1 bg-ctp-mantle px-3 py-2 text-sm text-ctp-text placeholder-ctp-overlay0 focus:border-ctp-lavender focus:ring-1 focus:ring-ctp-lavender focus:outline-none';
 </script>
@@ -63,10 +65,10 @@
 			<label for="product-price" class="mb-1 block text-sm font-medium text-ctp-subtext1">Preço (JPY)</label>
 			<input
 				id="product-price"
-				type="number"
+				type="text"
+				inputmode="numeric"
 				bind:value={priceJPY}
-				placeholder="Ex: 39980"
-				min="1"
+				placeholder="Ex: 39.980"
 				class={inputClass}
 			/>
 		</div>

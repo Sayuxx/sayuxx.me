@@ -1,0 +1,64 @@
+/* Shared color tokens for sayuxx.me apps. */
+/* Variable names use --ctp-* prefix for legacy compatibility with apps that started from Catppuccin. */
+/* Import via: @import '../../styles/theme.css'; (adjust relative depth per app) */
+
+/* Light — neutral 5-tone palette */
+:root {
+	--ctp-base: #e4e5f1;
+	--ctp-mantle: #fafafa;
+	--ctp-crust: #fafafa;
+	--ctp-surface0: #fafafa;
+	--ctp-surface1: #d2d3db;
+	--ctp-surface2: #9394a5;
+	--ctp-overlay0: #9394a5;
+	--ctp-overlay1: #9394a5;
+	--ctp-overlay2: #9394a5;
+	--ctp-subtext0: #9394a5;
+	--ctp-subtext1: #484b6a;
+	--ctp-text: #484b6a;
+	--ctp-lavender: #484b6a;
+	--ctp-blue: #484b6a;
+	--ctp-sapphire: #9394a5;
+	--ctp-sky: #9394a5;
+	--ctp-teal: #9394a5;
+	--ctp-green: #6a8a5a;
+	--ctp-yellow: #a88a4a;
+	--ctp-peach: #a8765a;
+	--ctp-maroon: #eba0ac;
+	--ctp-red: #f38ba8;
+	--ctp-mauve: #484b6a;
+	--ctp-pink: #f5c2e7;
+	--ctp-flamingo: #f2cdcd;
+	--ctp-rosewater: #f5e0dc;
+}
+
+/* Dark — Catppuccin Mocha */
+.dark {
+	--ctp-base: #1e1e2e;
+	--ctp-mantle: #181825;
+	--ctp-crust: #11111b;
+	--ctp-surface0: #313244;
+	--ctp-surface1: #45475a;
+	--ctp-surface2: #585b70;
+	--ctp-overlay0: #6c7086;
+	--ctp-overlay1: #7f849c;
+	--ctp-overlay2: #9399b2;
+	--ctp-subtext0: #a6adc8;
+	--ctp-subtext1: #bac2de;
+	--ctp-text: #cdd6f4;
+	--ctp-lavender: #b4befe;
+	--ctp-blue: #89b4fa;
+	--ctp-sapphire: #74c7ec;
+	--ctp-sky: #89dceb;
+	--ctp-teal: #94e2d5;
+	--ctp-green: #a6e3a1;
+	--ctp-yellow: #f9e2af;
+	--ctp-peach: #fab387;
+	--ctp-maroon: #eba0ac;
+	--ctp-red: #f38ba8;
+	--ctp-mauve: #8839ef;
+	--ctp-pink: #f5c2e7;
+	--ctp-flamingo: #f2cdcd;
+	--ctp-rosewater: #f5e0dc;
+	color-scheme: dark;
+}
