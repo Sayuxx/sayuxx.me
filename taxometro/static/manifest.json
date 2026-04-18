@@ -4,8 +4,8 @@
 	"description": "Calculadora de impostos para importações do Japão para o Brasil",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#f9fafb",
-	"theme_color": "#2563eb",
+	"background_color": "#e4e5f1",
+	"theme_color": "#e4e5f1",
 	"lang": "pt-BR",
 	"icons": [
 		{

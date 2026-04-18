@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-const THEME_KEY = 'taxometro_theme';
+const THEME_KEY = 'projeto2_theme';
 
 type Theme = 'light' | 'dark';
 
@@ -26,8 +26,4 @@ export function toggleTheme(): void {
 export function applyTheme(t: Theme): void {
 	if (typeof document === 'undefined') return;
 	document.documentElement.classList.toggle('dark', t === 'dark');
-	const color = t === 'dark' ? '#1e1e2e' : '#e4e5f1';
-	for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-		meta.setAttribute('content', color);
-	}
 }
