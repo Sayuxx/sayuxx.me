@@ -117,6 +117,29 @@ export function calculateTotalWeight(products: Product[]): number {
 }
 
 /**
+ * Calculate shipping when each product line is sent as its own package.
+ * Returns the aggregated cost plus the per-product JPY allocation so callers
+ * can feed the real shipping into per-product tax calculations.
+ */
+export function calculateSeparateShipping(
+	products: Product[],
+	method: ShippingMethod,
+	shippingTable: ShippingTable,
+	jpyToBrl: number
+): ShippingResult & { perProductJPY: number[] } {
+	const perProductJPY = products.map(
+		(p) => calculateShipping(p.weightGrams * p.quantity, method, shippingTable, jpyToBrl).costJPY
+	);
+	const costJPY = perProductJPY.reduce((sum, c) => sum + c, 0);
+	return {
+		method,
+		costJPY,
+		costBRL: round2(costJPY * jpyToBrl),
+		perProductJPY
+	};
+}
+
+/**
  * Distribute shipping cost proportionally across products by their value.
  * Returns shipping cost per product in JPY.
  */

@@ -1,7 +1,11 @@
 <script lang="ts">
 	import { products, selectedShippingMethod, singlePackage } from '$lib/stores/cart';
 	import { exchangeStore } from '$lib/stores/exchange';
-	import { calculateShipping, calculateTotalWeight } from '$lib/calc/engine';
+	import {
+		calculateShipping,
+		calculateSeparateShipping,
+		calculateTotalWeight
+	} from '$lib/calc/engine';
 	import type { ShippingMethod, ShippingTable } from '$lib/calc/types';
 	import shippingData from '$lib/data/shipping.json';
 	import Icon, { type IconName } from './Icon.svelte';
@@ -36,12 +40,20 @@
 
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 			{#each methods as method}
-				{@const result = calculateShipping(
-					totalWeight,
-					method.id,
-					shippingData as ShippingTable,
-					$exchangeStore.jpyToBrl
-				)}
+				{@const result =
+					$singlePackage || $products.length <= 1
+						? calculateShipping(
+								totalWeight,
+								method.id,
+								shippingData as ShippingTable,
+								$exchangeStore.jpyToBrl
+							)
+						: calculateSeparateShipping(
+								$products,
+								method.id,
+								shippingData as ShippingTable,
+								$exchangeStore.jpyToBrl
+							)}
 				<label
 					class="tx-method-card"
 					class:is-selected={$selectedShippingMethod === method.id}
