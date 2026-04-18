@@ -44,18 +44,21 @@
 				<span class="tx-mono text-ctp-text">{fmt(breakdown.cifBRL)}</span>
 			</div>
 			<hr class="tx-divider" />
-			<div class="flex justify-between">
-				<span class="text-ctp-subtext0">II (Imposto de Importação)</span>
-				<span class="tx-mono text-ctp-red">{fmt(breakdown.ii)}</span>
-			</div>
-			<div class="flex justify-between">
-				<span class="text-ctp-subtext0">ICMS ({(icmsRate * 100).toFixed(0)}%)</span>
-				<span class="tx-mono text-ctp-red">{fmt(breakdown.icms)}</span>
-			</div>
-			<div class="flex justify-between">
-				<span class="text-ctp-subtext0">IOF</span>
-				<span class="tx-mono text-ctp-red">{fmt(breakdown.iof)}</span>
-			</div>
+			{#if breakdown.immune}
+				<div class="flex justify-between">
+					<span class="text-ctp-green">Imunidade constitucional (livros)</span>
+					<span class="tx-mono text-ctp-green">{fmt(0)}</span>
+				</div>
+			{:else}
+				<div class="flex justify-between">
+					<span class="text-ctp-subtext0">II (Imposto de Importação)</span>
+					<span class="tx-mono text-ctp-red">{fmt(breakdown.ii)}</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-ctp-subtext0">ICMS ({(icmsRate * 100).toFixed(0)}%)</span>
+					<span class="tx-mono text-ctp-red">{fmt(breakdown.icms)}</span>
+				</div>
+			{/if}
 			<hr class="tx-divider" />
 			<div class="flex justify-between font-semibold">
 				<span class="text-ctp-text">Total impostos</span>

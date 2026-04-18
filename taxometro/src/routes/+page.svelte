@@ -1,8 +1,10 @@
 <script lang="ts">
 	import ExchangeRateBar from '$lib/components/ExchangeRateBar.svelte';
+	import ImportOptions from '$lib/components/ImportOptions.svelte';
 	import ProductForm from '$lib/components/ProductForm.svelte';
 	import ProductList from '$lib/components/ProductList.svelte';
 	import ShippingEstimate from '$lib/components/ShippingEstimate.svelte';
+	import StateSelector from '$lib/components/StateSelector.svelte';
 	import TotalSummary from '$lib/components/TotalSummary.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -43,6 +45,8 @@
 	</div>
 
 	<div class="space-y-4">
+		<StateSelector />
+		<ImportOptions />
 		<ProductForm />
 
 		{#if $products.length > 0}

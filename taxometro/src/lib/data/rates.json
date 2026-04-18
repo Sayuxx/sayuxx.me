@@ -1,16 +1,19 @@
 {
+	"lastVerified": "2026-04-18",
 	"exchangeRates": {
 		"jpyToBrl": 0.0374,
 		"jpyToUsd": 0.0067,
 		"lastUpdated": "2026-04-18"
 	},
 	"taxes": {
+		"iiPostalCommonRate": 0.60,
 		"iiRateLow": 0.20,
 		"iiRateHigh": 0.60,
 		"iiDeductionUSD": 20,
 		"cifThresholdUSD": 50,
 		"icmsRate": 0.17,
-		"iofRate": 0.035
+		"cardIofRate": 0.035,
+		"despachoPostalBRL": 15
 	},
 	"icmsByState": {
 		"AC": 0.20,
@@ -23,7 +26,7 @@
 		"ES": 0.17,
 		"GO": 0.17,
 		"MA": 0.17,
-		"MG": 0.20,
+		"MG": 0.17,
 		"MS": 0.17,
 		"MT": 0.17,
 		"PA": 0.17,

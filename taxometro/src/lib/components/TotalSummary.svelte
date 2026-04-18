@@ -3,100 +3,50 @@
 		products,
 		selectedShippingMethod,
 		selectedState,
-		singlePackage
+		singlePackage,
+		importChannel,
+		paymentMethod
 	} from '$lib/stores/cart';
 	import { exchangeStore } from '$lib/stores/exchange';
-	import {
-		calculateTaxes,
-		calculateShipping,
-		calculateSeparateShipping,
-		calculateTotalWeight,
-		distributeShipping,
-		resolveIcmsRate
-	} from '$lib/calc/engine';
-	import type { Product, RateTable, ShippingTable } from '$lib/calc/types';
+	import { calculateSummary, resolveIcmsRate, type SummaryInput } from '$lib/calc/engine';
+	import type { RateTable, ShippingTable } from '$lib/calc/types';
 	import ratesData from '$lib/data/rates.json';
 	import shippingData from '$lib/data/shipping.json';
 	import Icon from './Icon.svelte';
 
-	function getRateTable(): RateTable {
-		return {
-			exchangeRates: {
-				jpyToBrl: $exchangeStore.jpyToBrl,
-				jpyToUsd: $exchangeStore.jpyToUsd
-			},
-			taxes: {
-				...ratesData.taxes,
-				icmsRate: resolveIcmsRate($selectedState, ratesData.icmsByState, ratesData.taxes.icmsRate)
-			}
-		};
-	}
-
-	const totalWeight = $derived(calculateTotalWeight($products));
-
-	const singleShipping = $derived(
-		calculateShipping(
-			totalWeight,
-			$selectedShippingMethod,
-			shippingData as ShippingTable,
-			$exchangeStore.jpyToBrl
-		)
-	);
-
-	const separateShipping = $derived(
-		calculateSeparateShipping(
-			$products,
-			$selectedShippingMethod,
-			shippingData as ShippingTable,
-			$exchangeStore.jpyToBrl
-		)
-	);
-
-	function computeTotals(
-		items: Product[],
-		rates: RateTable,
-		shippingPerItemJPY: number[],
-		shippingBRL: number
-	) {
-		let subtotalProductsBRL = 0;
-		let subtotalTaxesBRL = 0;
-		for (let i = 0; i < items.length; i++) {
-			const breakdown = calculateTaxes(items[i], rates, shippingPerItemJPY[i]);
-			subtotalProductsBRL += breakdown.productPriceBRL;
-			subtotalTaxesBRL += breakdown.totalTaxes;
+	const rates = $derived<RateTable>({
+		exchangeRates: {
+			jpyToBrl: $exchangeStore.jpyToBrl,
+			jpyToUsd: $exchangeStore.jpyToUsd
+		},
+		taxes: {
+			...ratesData.taxes,
+			icmsRate: resolveIcmsRate(
+				$selectedState,
+				ratesData.icmsByState,
+				ratesData.taxes.icmsRate
+			)
 		}
-		return {
-			subtotalProductsBRL,
-			subtotalTaxesBRL,
-			shippingBRL,
-			grandTotalBRL: subtotalProductsBRL + subtotalTaxesBRL + shippingBRL
-		};
-	}
-
-	const summary = $derived.by(() => {
-		if ($products.length === 0) return null;
-
-		const rates = getRateTable();
-		const singleAlloc = distributeShipping($products, singleShipping.costJPY);
-		const singleTotals = computeTotals($products, rates, singleAlloc, singleShipping.costBRL);
-
-		if ($products.length < 2) {
-			return { primary: singleTotals, alternative: null, mode: 'single' as const };
-		}
-
-		const separateTotals = computeTotals(
-			$products,
-			rates,
-			separateShipping.perProductJPY,
-			separateShipping.costBRL
-		);
-
-		return {
-			primary: $singlePackage ? singleTotals : separateTotals,
-			alternative: $singlePackage ? separateTotals : singleTotals,
-			mode: $singlePackage ? ('single' as const) : ('separate' as const)
-		};
 	});
+
+	function buildInput(forceSinglePackage?: boolean): SummaryInput {
+		return {
+			products: $products,
+			channel: $importChannel,
+			paymentMethod: $paymentMethod,
+			singlePackage: forceSinglePackage ?? $singlePackage,
+			shippingMethod: $selectedShippingMethod,
+			shippingTable: shippingData as ShippingTable,
+			rates
+		};
+	}
+
+	const primary = $derived(calculateSummary(buildInput()));
+	const alternative = $derived(
+		$products.length >= 2 ? calculateSummary(buildInput(!$singlePackage)) : null
+	);
+
+	const hasImmune = $derived($products.some((p) => p.category === 'manga_books'));
 
 	function fmt(value: number): string {
 		return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -108,7 +58,7 @@
 	}
 </script>
 
-{#if summary}
+{#if $products.length > 0}
 	<aside class="tx-summary">
 		<div class="mb-4 flex items-center gap-3">
 			<span class="tx-icon-badge" aria-hidden="true">
@@ -120,46 +70,76 @@
 		<div class="space-y-2.5 text-sm">
 			<div class="flex justify-between">
 				<span class="text-ctp-subtext0">Produtos ({$products.length})</span>
-				<span class="tx-mono text-ctp-text">{fmt(summary.primary.subtotalProductsBRL)}</span>
+				<span class="tx-mono text-ctp-text">{fmt(primary.subtotalProductsBRL)}</span>
 			</div>
+
 			<div class="flex justify-between">
-				<span class="text-ctp-red">Impostos</span>
-				<span class="tx-mono text-ctp-red">{fmt(summary.primary.subtotalTaxesBRL)}</span>
+				<span class="text-ctp-red">
+					Impostos
+					{#if hasImmune}
+						<span class="text-ctp-overlay0">(livros isentos)</span>
+					{/if}
+				</span>
+				<span class="tx-mono text-ctp-red">{fmt(primary.subtotalTaxesBRL)}</span>
 			</div>
+
 			<div class="flex justify-between">
 				<span class="text-ctp-subtext0">
 					Frete
-					{#if summary.alternative}
+					{#if alternative}
 						<span class="text-ctp-overlay0">
-							({summary.mode === 'single' ? 'mesmo pacote' : 'separados'})
+							({$singlePackage ? 'mesmo pacote' : 'separados'})
 						</span>
 					{/if}
 				</span>
-				<span class="tx-mono text-ctp-text">{fmt(summary.primary.shippingBRL)}</span>
+				<span class="tx-mono text-ctp-text">{fmt(primary.shippingBRL)}</span>
 			</div>
+
+			{#if primary.despachoPostalBRL > 0}
+				<div class="flex justify-between">
+					<span class="text-ctp-subtext0">
+						Despacho postal
+						<span class="text-ctp-overlay0">
+							({primary.packagesCount}× Correios)
+						</span>
+					</span>
+					<span class="tx-mono text-ctp-text">{fmt(primary.despachoPostalBRL)}</span>
+				</div>
+			{/if}
+
+			{#if primary.cardIofBRL > 0}
+				<div class="flex justify-between">
+					<span class="text-ctp-subtext0">
+						IOF cartão
+						<span class="text-ctp-overlay0">(3,5%)</span>
+					</span>
+					<span class="tx-mono text-ctp-text">{fmt(primary.cardIofBRL)}</span>
+				</div>
+			{/if}
+
 			<hr class="tx-divider" />
 			<div class="flex items-end justify-between pt-1">
 				<span class="text-xs font-medium tracking-wider text-ctp-subtext0 uppercase">
 					Total
 				</span>
 				<span class="tx-mono text-[1.75rem] font-bold tracking-tight text-ctp-lavender">
-					{fmt(summary.primary.grandTotalBRL)}
+					{fmt(primary.grandTotalBRL)}
 				</span>
 			</div>
 		</div>
 
-		{#if summary.alternative}
-			{@const diff = summary.alternative.grandTotalBRL - summary.primary.grandTotalBRL}
+		{#if alternative}
+			{@const diff = alternative.grandTotalBRL - primary.grandTotalBRL}
 			<div class="mt-4 rounded-lg border border-ctp-surface1 bg-ctp-mantle/50 p-3">
 				<div class="mb-1.5 text-[0.7rem] font-medium tracking-wider text-ctp-subtext0 uppercase">
 					Comparação
 				</div>
 				<div class="flex justify-between text-xs text-ctp-subtext1">
 					<span>
-						Se {summary.mode === 'single' ? 'enviados separados' : 'tudo no mesmo pacote'}
+						Se {$singlePackage ? 'enviados separados' : 'tudo no mesmo pacote'}
 					</span>
 					<span class="tx-mono text-ctp-text">
-						{fmt(summary.alternative.grandTotalBRL)}
+						{fmt(alternative.grandTotalBRL)}
 					</span>
 				</div>
 				<div class="mt-1 flex justify-between text-[0.7rem]">

@@ -1,9 +1,19 @@
 <script lang="ts">
-	import { products, removeProduct, updateProduct, selectedState } from '$lib/stores/cart';
+	import {
+		products,
+		removeProduct,
+		updateProduct,
+		selectedState,
+		selectedShippingMethod,
+		singlePackage,
+		importChannel,
+		paymentMethod
+	} from '$lib/stores/cart';
 	import { exchangeStore } from '$lib/stores/exchange';
-	import { calculateTaxes, resolveIcmsRate } from '$lib/calc/engine';
-	import type { Product, ProductCategory, RateTable } from '$lib/calc/types';
+	import { calculateSummary, resolveIcmsRate } from '$lib/calc/engine';
+	import type { Product, ProductCategory, RateTable, ShippingTable } from '$lib/calc/types';
 	import ratesData from '$lib/data/rates.json';
+	import shippingData from '$lib/data/shipping.json';
 	import categoriesData from '$lib/data/categories.json';
 	import TaxBreakdown from './TaxBreakdown.svelte';
 	import Icon from './Icon.svelte';
@@ -13,18 +23,32 @@
 		categoryLabels[cat.id] = cat.label;
 	}
 
-	function getRateTable(exchange: typeof $exchangeStore, state: string): RateTable {
-		return {
-			exchangeRates: {
-				jpyToBrl: exchange.jpyToBrl,
-				jpyToUsd: exchange.jpyToUsd
-			},
-			taxes: {
-				...ratesData.taxes,
-				icmsRate: resolveIcmsRate(state, ratesData.icmsByState, ratesData.taxes.icmsRate)
-			}
-		};
-	}
+	const rates = $derived<RateTable>({
+		exchangeRates: {
+			jpyToBrl: $exchangeStore.jpyToBrl,
+			jpyToUsd: $exchangeStore.jpyToUsd
+		},
+		taxes: {
+			...ratesData.taxes,
+			icmsRate: resolveIcmsRate(
+				$selectedState,
+				ratesData.icmsByState,
+				ratesData.taxes.icmsRate
+			)
+		}
+	});
+
+	const summary = $derived(
+		calculateSummary({
+			products: $products,
+			channel: $importChannel,
+			paymentMethod: $paymentMethod,
+			singlePackage: $singlePackage,
+			shippingMethod: $selectedShippingMethod,
+			shippingTable: shippingData as ShippingTable,
+			rates
+		})
+	);
 
 	function fmt(value: number): string {
 		return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -84,9 +108,8 @@
 	</div>
 {:else}
 	<div class="space-y-3">
-		{#each $products as product (product.id)}
-			{@const rates = getRateTable($exchangeStore, $selectedState)}
-			{@const breakdown = calculateTaxes(product, rates)}
+		{#each $products as product, i (product.id)}
+			{@const breakdown = summary.perProduct[i]}
 			<article class="tx-card p-4 tx-anim-in">
 				{#if editingId === product.id}
 					<div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">

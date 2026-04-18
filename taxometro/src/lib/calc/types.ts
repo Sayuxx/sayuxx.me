@@ -23,18 +23,23 @@ export interface Product {
 	weightGrams: number;
 }
 
+export type ImportChannel = 'postal_common' | 'remessa_conforme';
+export type PaymentMethod = 'br_card' | 'other';
+
 export interface RateTable {
 	exchangeRates: {
 		jpyToBrl: number;
 		jpyToUsd: number;
 	};
 	taxes: {
-		iiRateLow: number; // 0.20 for CIF < USD 50
-		iiRateHigh: number; // 0.60 for CIF >= USD 50
-		iiDeductionUSD: number; // 20
+		iiPostalCommonRate: number; // 0.60 flat for non-RC postal (Japan Post via Correios)
+		iiRateLow: number; // 0.20 for CIF <= USD 50 under Remessa Conforme
+		iiRateHigh: number; // 0.60 for CIF > USD 50 under Remessa Conforme
+		iiDeductionUSD: number; // 20 USD deduction for high bracket
 		cifThresholdUSD: number; // 50
-		icmsRate: number; // 0.17 (unified under Remessa Conforme)
-		iofRate: number; // 0.035
+		icmsRate: number; // state ICMS (17% or 20%), resolved per state
+		cardIofRate: number; // 0.035 — only applied when paymentMethod === 'br_card'
+		despachoPostalBRL: number; // Correios flat fee per package (postal_common only)
 	};
 }
 
@@ -56,9 +61,21 @@ export interface TaxBreakdown {
 	cifBRL: number;
 	ii: number;
 	icms: number;
-	iof: number;
 	totalTaxes: number;
 	totalWithTaxes: number;
+	immune: boolean;
+}
+
+export interface SummaryResult {
+	perProduct: TaxBreakdown[];
+	packagesCount: number;
+	subtotalProductsBRL: number;
+	subtotalTaxesBRL: number;
+	shippingBRL: number;
+	shippingJPY: number;
+	despachoPostalBRL: number;
+	cardIofBRL: number;
+	grandTotalBRL: number;
 }
 
 export interface ShippingResult {

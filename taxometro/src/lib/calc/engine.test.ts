@@ -1,6 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTaxes, calculateShipping, calculateTotalWeight, distributeShipping } from './engine';
+import {
+	calculateShipping,
+	calculateTotalWeight,
+	distributeShipping,
+	calculateSummary,
+	isIICategoryImmune,
+	isICMSCategoryImmune,
+	resolveIcmsRate
+} from './engine';
 import type { Product, RateTable, ShippingTable } from './types';
+import type { SummaryInput as _SummaryInput } from './engine';
 
 const defaultRates: RateTable = {
 	exchangeRates: {
@@ -8,13 +17,27 @@ const defaultRates: RateTable = {
 		jpyToUsd: 0.0067
 	},
 	taxes: {
-		iiRateLow: 0.20,
-		iiRateHigh: 0.60,
+		iiPostalCommonRate: 0.6,
+		iiRateLow: 0.2,
+		iiRateHigh: 0.6,
 		iiDeductionUSD: 20,
 		cifThresholdUSD: 50,
 		icmsRate: 0.17,
-		iofRate: 0.035
+		cardIofRate: 0.035,
+		despachoPostalBRL: 15
 	}
+};
+
+const defaultShipping: ShippingTable = {
+	ems: [
+		{ maxGrams: 500, priceJPY: 3600 },
+		{ maxGrams: 1000, priceJPY: 5100 },
+		{ maxGrams: 2000, priceJPY: 8100 }
+	],
+	airmail: [
+		{ maxGrams: 1000, priceJPY: 4550 },
+		{ maxGrams: 2000, priceJPY: 7250 }
+	]
 };
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
@@ -29,177 +52,246 @@ function makeProduct(overrides: Partial<Product> = {}): Product {
 	};
 }
 
-describe('calculateTaxes', () => {
-	it('should calculate taxes for a product under USD 50 threshold', () => {
-		// 5000 JPY * 0.0067 = 33.5 USD (under 50 threshold)
-		const product = makeProduct({ priceJPY: 5000 });
-		const result = calculateTaxes(product, defaultRates);
+function baseInput(overrides: Partial<_SummaryInput> = {}): _SummaryInput {
+	return {
+		products: [makeProduct()],
+		channel: 'postal_common',
+		paymentMethod: 'other',
+		singlePackage: true,
+		shippingMethod: 'ems',
+		shippingTable: defaultShipping,
+		rates: defaultRates,
+		...overrides
+	};
+}
 
-		expect(result.productPriceJPY).toBe(5000);
-		expect(result.productPriceBRL).toBe(187); // 5000 * 0.0374
-		expect(result.cifUSD).toBe(33.5); // 5000 * 0.0067
-		expect(result.ii).toBeGreaterThan(0);
-		expect(result.totalTaxes).toBeGreaterThan(0);
-		expect(result.totalWithTaxes).toBeGreaterThan(result.productPriceBRL);
-	});
-
-	it('should use 20% II rate for CIF under USD 50', () => {
-		const product = makeProduct({ priceJPY: 5000 }); // 33.5 USD
-		const result = calculateTaxes(product, defaultRates);
+describe('calculateSummary — postal_common channel', () => {
+	it('applies 60% II flat with no threshold', () => {
+		// Product 5000 JPY, shipping 3600 JPY (weight=500)
+		// CIF USD = (5000 + 3600) * 0.0067 = 57.62
+		const result = calculateSummary(baseInput());
 		const usdToBrl = defaultRates.exchangeRates.jpyToBrl / defaultRates.exchangeRates.jpyToUsd;
+		const cifUSD = (5000 + 3600) * defaultRates.exchangeRates.jpyToUsd;
+		const expectedII = cifUSD * 0.6 * usdToBrl;
 
-		// II should be CIF * 20% = 33.5 * 0.20 = 6.70 USD
-		const expectedIIusd = 33.5 * 0.20;
-		expect(result.ii).toBeCloseTo(expectedIIusd * usdToBrl, 1);
+		expect(result.perProduct[0].ii).toBeCloseTo(expectedII, 1);
 	});
 
-	it('should use 60% II rate minus USD 20 for CIF over USD 50', () => {
-		// 10000 JPY * 0.0067 = 67 USD (over 50 threshold)
-		const product = makeProduct({ priceJPY: 10000 });
-		const result = calculateTaxes(product, defaultRates);
+	it('adds Correios despacho postal fee once for single package', () => {
+		const result = calculateSummary(baseInput());
+		expect(result.despachoPostalBRL).toBe(15);
+		expect(result.packagesCount).toBe(1);
+	});
+
+	it('adds N × despacho fee for N separate packages', () => {
+		const result = calculateSummary(
+			baseInput({
+				products: [
+					makeProduct({ id: '1', priceJPY: 3000 }),
+					makeProduct({ id: '2', priceJPY: 4000 }),
+					makeProduct({ id: '3', priceJPY: 5000 })
+				],
+				singlePackage: false
+			})
+		);
+		expect(result.packagesCount).toBe(3);
+		expect(result.despachoPostalBRL).toBe(45);
+	});
+
+	it('does not double-tax: grand total = products + taxes + shipping + despacho + cardIOF', () => {
+		const result = calculateSummary(baseInput());
+		const expected =
+			result.subtotalProductsBRL +
+			result.subtotalTaxesBRL +
+			result.shippingBRL +
+			result.despachoPostalBRL +
+			result.cardIofBRL;
+		expect(result.grandTotalBRL).toBeCloseTo(expected, 1);
+	});
+});
+
+describe('calculateSummary — remessa_conforme channel', () => {
+	it('uses 20% II for CIF ≤ USD 50', () => {
+		// Product 5000 JPY, no shipping cost allocated via tiny bracket
+		// Use a low-shipping scenario: weight 500g → 3600 JPY
+		// CIF = (5000 + 3600) * 0.0067 = 57.62 — let's go lower
+		const product = makeProduct({ priceJPY: 3000, weightGrams: 100 });
+		const result = calculateSummary(
+			baseInput({
+				channel: 'remessa_conforme',
+				products: [product]
+			})
+		);
+		// CIF = (3000 + 3600) * 0.0067 = 44.22 USD → low bracket
 		const usdToBrl = defaultRates.exchangeRates.jpyToBrl / defaultRates.exchangeRates.jpyToUsd;
-
-		// II should be CIF * 60% - 20 = 67 * 0.60 - 20 = 20.2 USD
-		const expectedIIusd = 67 * 0.60 - 20;
-		expect(result.ii).toBeCloseTo(expectedIIusd * usdToBrl, 1);
+		const cifUSD = (3000 + 3600) * defaultRates.exchangeRates.jpyToUsd;
+		expect(cifUSD).toBeLessThanOrEqual(50);
+		const expectedII = cifUSD * 0.2 * usdToBrl;
+		expect(result.perProduct[0].ii).toBeCloseTo(expectedII, 1);
 	});
 
-	it('should handle the boundary at exactly USD 50', () => {
-		// 7462 JPY * 0.0067 = 49.9954 USD (under)
-		const productUnder = makeProduct({ priceJPY: 7462 });
-		const resultUnder = calculateTaxes(productUnder, defaultRates);
-
-		// 7500 JPY * 0.0067 = 50.25 USD (over)
-		const productOver = makeProduct({ priceJPY: 7500 });
-		const resultOver = calculateTaxes(productOver, defaultRates);
-
-		// The one over threshold should have higher II rate
-		expect(resultOver.ii).toBeGreaterThan(resultUnder.ii);
-	});
-
-	it('should calculate ICMS at unified 17% using por-dentro method', () => {
-		const product = makeProduct({ priceJPY: 10000 }); // 67 USD
-		const result = calculateTaxes(product, defaultRates);
+	it('uses 60% − USD 20 for CIF > USD 50', () => {
+		// CIF well above 50
+		const product = makeProduct({ priceJPY: 15000, weightGrams: 500 });
+		const result = calculateSummary(
+			baseInput({ channel: 'remessa_conforme', products: [product] })
+		);
 		const usdToBrl = defaultRates.exchangeRates.jpyToBrl / defaultRates.exchangeRates.jpyToUsd;
+		const cifUSD = (15000 + 3600) * defaultRates.exchangeRates.jpyToUsd;
+		const expectedII = (cifUSD * 0.6 - 20) * usdToBrl;
+		expect(result.perProduct[0].ii).toBeCloseTo(expectedII, 1);
+	});
 
-		// ICMS base = (CIF + II) / (1 - 0.17), ICMS = base * 0.17
-		const cifUSD = 67;
-		const iiUSD = cifUSD * 0.60 - 20; // 20.2
+	it('uses exactly-50 USD boundary inclusively (low bracket)', () => {
+		// 50 / 0.0067 ≈ 7462.69 JPY total CIF needed. With 3600 shipping, product ≈ 3862.69
+		// CIF = 7462 * 0.0067 = 49.9954 — just under → low bracket
+		const productUnder = makeProduct({ priceJPY: 3862, weightGrams: 500 });
+		const under = calculateSummary(
+			baseInput({ channel: 'remessa_conforme', products: [productUnder] })
+		);
+		const cifUnder = under.perProduct[0].cifUSD;
+		expect(cifUnder).toBeLessThanOrEqual(50);
+		const usdToBrl = defaultRates.exchangeRates.jpyToBrl / defaultRates.exchangeRates.jpyToUsd;
+		// Low bracket: cif * 0.20
+		expect(under.perProduct[0].ii).toBeCloseTo(cifUnder * 0.2 * usdToBrl, 1);
+	});
+
+	it('applies threshold at shipment level, not per-item (single package)', () => {
+		// Two products each ≈ USD 30. Per-item both would be low-bracket.
+		// Combined = USD 60 → high-bracket under RC.
+		const p1 = makeProduct({ id: '1', priceJPY: 4000, weightGrams: 200 });
+		const p2 = makeProduct({ id: '2', priceJPY: 4000, weightGrams: 300 });
+		const result = calculateSummary(
+			baseInput({ channel: 'remessa_conforme', products: [p1, p2], singlePackage: true })
+		);
+		// Aggregate CIF in USD
+		const totalCifUSD = result.perProduct[0].cifUSD + result.perProduct[1].cifUSD;
+		expect(totalCifUSD).toBeGreaterThan(50);
+		// Total II should reflect high bracket on aggregate
+		const usdToBrl = defaultRates.exchangeRates.jpyToBrl / defaultRates.exchangeRates.jpyToUsd;
+		const expectedII = Math.max(0, totalCifUSD * 0.6 - 20) * usdToBrl;
+		const totalII = result.perProduct[0].ii + result.perProduct[1].ii;
+		expect(totalII).toBeCloseTo(expectedII, 1);
+	});
+
+	it('has no despacho postal fee (RC already collects at checkout)', () => {
+		const result = calculateSummary(baseInput({ channel: 'remessa_conforme' }));
+		expect(result.despachoPostalBRL).toBe(0);
+	});
+});
+
+describe('calculateSummary — category immunity', () => {
+	it('zeroes II and ICMS for manga/books (constitutional immunity)', () => {
+		const book = makeProduct({ category: 'manga_books', priceJPY: 10000 });
+		const result = calculateSummary(baseInput({ products: [book] }));
+		expect(result.perProduct[0].ii).toBe(0);
+		expect(result.perProduct[0].icms).toBe(0);
+		expect(result.perProduct[0].immune).toBe(true);
+	});
+
+	it('only exempts immune item when mixing immune + taxable in same shipment', () => {
+		const book = makeProduct({ id: '1', category: 'manga_books', priceJPY: 5000 });
+		const toy = makeProduct({ id: '2', category: 'figures_toys', priceJPY: 5000 });
+		const result = calculateSummary(baseInput({ products: [book, toy] }));
+		expect(result.perProduct[0].ii).toBe(0);
+		expect(result.perProduct[0].icms).toBe(0);
+		expect(result.perProduct[1].ii).toBeGreaterThan(0);
+		expect(result.perProduct[1].icms).toBeGreaterThan(0);
+	});
+
+	it('exposes immunity helpers', () => {
+		expect(isIICategoryImmune('manga_books')).toBe(true);
+		expect(isIICategoryImmune('electronics')).toBe(false);
+		expect(isICMSCategoryImmune('manga_books')).toBe(true);
+	});
+});
+
+describe('calculateSummary — IOF is removed from customs base', () => {
+	it('does not add 3.5% IOF on CIF', () => {
+		// With paymentMethod='other', no IOF anywhere. Total taxes should only be II + ICMS.
+		const result = calculateSummary(baseInput());
+		const iiPlusIcms = result.perProduct[0].ii + result.perProduct[0].icms;
+		expect(result.perProduct[0].totalTaxes).toBeCloseTo(iiPlusIcms, 1);
+		expect(result.cardIofBRL).toBe(0);
+	});
+
+	it('adds card IOF 3.5% on (products + shipping) when paymentMethod=br_card', () => {
+		const result = calculateSummary(baseInput({ paymentMethod: 'br_card' }));
+		const expectedBase = result.subtotalProductsBRL + result.shippingBRL;
+		expect(result.cardIofBRL).toBeCloseTo(expectedBase * 0.035, 1);
+	});
+});
+
+describe('calculateSummary — ICMS', () => {
+	it('applies ICMS "por dentro" on (taxable CIF + II)', () => {
+		const product = makeProduct({ priceJPY: 10000, weightGrams: 500 });
+		const result = calculateSummary(baseInput({ products: [product] }));
+		// CIF USD = (10000+3600)*0.0067 ≈ 91.12
+		const cifUSD = (10000 + 3600) * defaultRates.exchangeRates.jpyToUsd;
+		const iiUSD = cifUSD * 0.6; // postal_common
 		const icmsBaseUSD = (cifUSD + iiUSD) / (1 - 0.17);
+		const usdToBrl = defaultRates.exchangeRates.jpyToBrl / defaultRates.exchangeRates.jpyToUsd;
 		const expectedIcms = icmsBaseUSD * 0.17 * usdToBrl;
-
-		expect(result.icms).toBeCloseTo(expectedIcms, 1);
+		expect(result.perProduct[0].icms).toBeCloseTo(expectedIcms, 1);
 	});
 
-	it('should calculate IOF on CIF value only', () => {
-		const product = makeProduct({ priceJPY: 10000 });
-		const result = calculateTaxes(product, defaultRates);
-
-		expect(result.iof).toBeGreaterThan(0);
-		// IOF should be 3.5% of CIF in BRL (currency conversion tax, not domestic taxes)
-		expect(result.iof).toBeCloseTo(result.cifBRL * 0.035, 2);
-	});
-
-	it('should handle quantity > 1', () => {
-		const product1 = makeProduct({ priceJPY: 5000, quantity: 1 });
-		const product2 = makeProduct({ priceJPY: 5000, quantity: 3 });
-		const result1 = calculateTaxes(product1, defaultRates);
-		const result2 = calculateTaxes(product2, defaultRates);
-
-		expect(result2.productPriceBRL).toBe(result1.productPriceBRL * 3);
-	});
-
-	it('should include shipping in CIF when provided', () => {
-		const product = makeProduct({ priceJPY: 5000 });
-		const resultNoShipping = calculateTaxes(product, defaultRates, 0);
-		const resultWithShipping = calculateTaxes(product, defaultRates, 3600);
-
-		expect(resultWithShipping.cifUSD).toBeGreaterThan(resultNoShipping.cifUSD);
-		expect(resultWithShipping.totalTaxes).toBeGreaterThan(resultNoShipping.totalTaxes);
-	});
-
-	it('should only include II, ICMS, and IOF in total taxes', () => {
-		const product = makeProduct({ priceJPY: 10000 });
-		const result = calculateTaxes(product, defaultRates);
-
-		// totalTaxes should equal ii + icms + iof
-		expect(result.totalTaxes).toBeCloseTo(result.ii + result.icms + result.iof, 2);
-	});
-
-	it('should not have pis, cofins, or ipi fields', () => {
-		const product = makeProduct({ priceJPY: 10000 });
-		const result = calculateTaxes(product, defaultRates);
-
-		expect(result).not.toHaveProperty('pis');
-		expect(result).not.toHaveProperty('cofins');
-		expect(result).not.toHaveProperty('ipi');
+	it('uses state-specific ICMS rate', () => {
+		const rate20 = resolveIcmsRate('AC', { AC: 0.2, SP: 0.17 }, 0.17);
+		expect(rate20).toBe(0.2);
+		const rateDefault = resolveIcmsRate('ZZ', { SP: 0.17 }, 0.17);
+		expect(rateDefault).toBe(0.17);
 	});
 });
 
 describe('calculateShipping', () => {
-	const shippingTable: ShippingTable = {
-		ems: [
-			{ maxGrams: 500, priceJPY: 3600 },
-			{ maxGrams: 1000, priceJPY: 4850 },
-			{ maxGrams: 2000, priceJPY: 7450 }
-		],
-		sal: [
-			{ maxGrams: 500, priceJPY: 1680 },
-			{ maxGrams: 1000, priceJPY: 2380 }
-		]
-	};
-
-	it('should find correct rate bracket for weight', () => {
-		const result = calculateShipping(400, 'ems', shippingTable, 0.0374);
+	it('finds correct rate bracket', () => {
+		const result = calculateShipping(400, 'ems', defaultShipping, 0.0374);
 		expect(result.costJPY).toBe(3600);
-		expect(result.costBRL).toBeCloseTo(134.64, 1);
 	});
 
-	it('should use next bracket when weight exceeds current', () => {
-		const result = calculateShipping(600, 'ems', shippingTable, 0.0374);
-		expect(result.costJPY).toBe(4850);
+	it('uses the next bracket when weight exceeds current', () => {
+		const result = calculateShipping(600, 'ems', defaultShipping, 0.0374);
+		expect(result.costJPY).toBe(5100);
 	});
 
-	it('should use highest bracket when weight exceeds all', () => {
-		const result = calculateShipping(5000, 'ems', shippingTable, 0.0374);
-		expect(result.costJPY).toBe(7450);
+	it('caps at the highest bracket when weight exceeds all', () => {
+		const result = calculateShipping(5000, 'ems', defaultShipping, 0.0374);
+		expect(result.costJPY).toBe(8100);
 	});
 
-	it('should return 0 for unknown method', () => {
-		const result = calculateShipping(500, 'airmail', shippingTable, 0.0374);
+	it('returns 0 for unknown method', () => {
+		const result = calculateShipping(500, 'sal' as 'ems', defaultShipping, 0.0374);
 		expect(result.costJPY).toBe(0);
 	});
 });
 
 describe('calculateTotalWeight', () => {
-	it('should sum weights with quantities', () => {
-		const products = [
+	it('sums weights × quantities', () => {
+		const items = [
 			makeProduct({ weightGrams: 200, quantity: 2 }),
 			makeProduct({ weightGrams: 500, quantity: 1 })
 		];
-		expect(calculateTotalWeight(products)).toBe(900);
+		expect(calculateTotalWeight(items)).toBe(900);
 	});
 
-	it('should return 0 for empty array', () => {
+	it('returns 0 for empty array', () => {
 		expect(calculateTotalWeight([])).toBe(0);
 	});
 });
 
 describe('distributeShipping', () => {
-	it('should distribute proportionally by value', () => {
-		const products = [
+	it('distributes proportionally by value', () => {
+		const items = [
 			makeProduct({ priceJPY: 3000, quantity: 1 }),
 			makeProduct({ priceJPY: 7000, quantity: 1 })
 		];
-		const distribution = distributeShipping(products, 5000);
-
-		expect(distribution[0]).toBeCloseTo(1500, 0); // 3000/10000 * 5000
-		expect(distribution[1]).toBeCloseTo(3500, 0); // 7000/10000 * 5000
+		const dist = distributeShipping(items, 5000);
+		expect(dist[0]).toBeCloseTo(1500, 0);
+		expect(dist[1]).toBeCloseTo(3500, 0);
 	});
 
-	it('should handle zero total value', () => {
-		const products = [makeProduct({ priceJPY: 0 })];
-		const distribution = distributeShipping(products, 5000);
-		expect(distribution[0]).toBe(0);
+	it('handles zero total value without dividing by zero', () => {
+		const dist = distributeShipping([makeProduct({ priceJPY: 0 })], 5000);
+		expect(dist[0]).toBe(0);
 	});
 });
