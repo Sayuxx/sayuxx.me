@@ -4,6 +4,30 @@
 
 /* Light — neutral 5-tone palette */
 :root {
+	/* Radius */
+	--radius-sm: 0.5rem;
+	--radius-md: 0.75rem;
+	--radius-lg: 1rem;
+	--radius-xl: 1.25rem;
+	--radius-full: 999px;
+
+	/* Shadows — light */
+	--shadow-xs: 0 1px 2px rgba(72, 75, 106, 0.04);
+	--shadow-sm: 0 2px 8px rgba(72, 75, 106, 0.06),
+				 0 1px 2px rgba(72, 75, 106, 0.04);
+	--shadow-md: 0 8px 24px rgba(72, 75, 106, 0.08),
+				 0 2px 6px rgba(72, 75, 106, 0.04);
+	--shadow-lg: 0 20px 40px -12px rgba(72, 75, 106, 0.18),
+				 0 4px 12px rgba(72, 75, 106, 0.06);
+
+	/* Focus rings */
+	--ring-accent: 0 0 0 3px rgba(72, 75, 106, 0.18);
+	--ring-danger: 0 0 0 3px rgba(243, 139, 168, 0.22);
+
+	/* Easing */
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
 	--ctp-base: #e4e5f1;
 	--ctp-mantle: #fafafa;
 	--ctp-crust: #fafafa;
@@ -34,6 +58,18 @@
 
 /* Dark — Catppuccin Mocha */
 .dark {
+	/* Shadows — dark (more opaque for weight on dark backgrounds) */
+	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+	--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.32),
+				 0 1px 2px rgba(0, 0, 0, 0.20);
+	--shadow-md: 0 8px 24px rgba(0, 0, 0, 0.38),
+				 0 2px 6px rgba(0, 0, 0, 0.22);
+	--shadow-lg: 0 20px 40px -12px rgba(0, 0, 0, 0.55),
+				 0 4px 12px rgba(0, 0, 0, 0.30);
+
+	--ring-accent: 0 0 0 3px rgba(180, 190, 254, 0.28);
+	--ring-danger: 0 0 0 3px rgba(243, 139, 168, 0.28);
+
 	--ctp-base: #1e1e2e;
 	--ctp-mantle: #181825;
 	--ctp-crust: #11111b;

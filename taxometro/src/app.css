@@ -4,7 +4,26 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 html, body {
+	font-family: 'Inter', ui-sans-serif, system-ui, -apple-system,
+				 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	font-feature-settings: 'cv11', 'ss01', 'ss03';
+	text-rendering: optimizeLegibility;
+}
+
+body {
+	min-height: 100dvh;
 	background-color: var(--ctp-base);
+	background-image:
+		radial-gradient(1200px 600px at 10% -10%,
+			color-mix(in oklch, var(--ctp-lavender) 8%, transparent) 0%,
+			transparent 60%),
+		radial-gradient(900px 500px at 110% 0%,
+			color-mix(in oklch, var(--ctp-blue) 6%, transparent) 0%,
+			transparent 55%);
+	background-attachment: fixed;
+	color: var(--ctp-text);
 }
 
 select option {
@@ -16,6 +35,353 @@ select option {
 .dark input[type="text"],
 .dark select {
 	color-scheme: dark;
+}
+
+/* Numeric values get tabular figures for alignment */
+.tx-num {
+	font-variant-numeric: tabular-nums;
+}
+
+.tx-mono {
+	font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco,
+				 'Liberation Mono', 'Courier New', monospace;
+	font-variant-numeric: tabular-nums;
+}
+
+/* === Primitives === */
+
+.tx-card {
+	background-color: var(--ctp-mantle);
+	border: 1px solid color-mix(in oklch, var(--ctp-surface1) 60%, transparent);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-sm);
+	transition: box-shadow 200ms var(--ease-out),
+				border-color 200ms var(--ease-out),
+				transform 200ms var(--ease-out);
+}
+.tx-card:hover {
+	box-shadow: var(--shadow-md);
+}
+
+.tx-input {
+	width: 100%;
+	min-height: 44px;
+	padding: 0.625rem 0.875rem;
+	font-size: 0.9375rem;
+	color: var(--ctp-text);
+	background-color: var(--ctp-mantle);
+	border: 1px solid color-mix(in oklch, var(--ctp-surface1) 70%, transparent);
+	border-radius: var(--radius-md);
+	transition: border-color 180ms var(--ease-out),
+				box-shadow 180ms var(--ease-out),
+				background-color 180ms var(--ease-out);
+}
+.tx-input::placeholder {
+	color: var(--ctp-overlay0);
+	opacity: 0.7;
+}
+.tx-input:hover {
+	border-color: var(--ctp-surface2);
+}
+.tx-input:focus,
+.tx-input:focus-visible {
+	outline: none;
+	border-color: var(--ctp-lavender);
+	box-shadow: var(--ring-accent);
+	background-color: var(--ctp-base);
+}
+
+.tx-label {
+	display: block;
+	margin-bottom: 0.375rem;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	color: var(--ctp-subtext1);
+}
+
+.tx-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	min-height: 44px;
+	padding: 0.625rem 1.125rem;
+	border-radius: var(--radius-md);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	transition: transform 120ms var(--ease-out),
+				box-shadow 180ms var(--ease-out),
+				background-color 180ms var(--ease-out),
+				color 180ms var(--ease-out),
+				border-color 180ms var(--ease-out);
+	cursor: pointer;
+}
+.tx-btn:active {
+	transform: translateY(1px);
+}
+.tx-btn:focus-visible {
+	outline: none;
+	box-shadow: var(--ring-accent);
+}
+
+.tx-btn-primary {
+	background-color: var(--ctp-lavender);
+	color: var(--ctp-mantle);
+	box-shadow: var(--shadow-sm);
+}
+.tx-btn-primary:hover:not(:disabled) {
+	background-color: var(--ctp-blue);
+	box-shadow: var(--shadow-md);
+}
+.tx-btn-primary:disabled {
+	background-color: var(--ctp-surface1);
+	color: var(--ctp-overlay0);
+	box-shadow: none;
+	cursor: not-allowed;
+}
+
+.tx-btn-ghost {
+	background-color: transparent;
+	color: var(--ctp-subtext1);
+	border: 1px solid color-mix(in oklch, var(--ctp-surface1) 60%, transparent);
+}
+.tx-btn-ghost:hover:not(:disabled) {
+	background-color: color-mix(in oklch, var(--ctp-surface1) 30%, transparent);
+	color: var(--ctp-text);
+}
+
+.tx-btn-danger-ghost {
+	background-color: transparent;
+	color: var(--ctp-red);
+	border: 1px solid color-mix(in oklch, var(--ctp-red) 35%, transparent);
+}
+.tx-btn-danger-ghost:hover:not(:disabled) {
+	background-color: color-mix(in oklch, var(--ctp-red) 12%, transparent);
+}
+.tx-btn-danger-ghost:focus-visible {
+	box-shadow: var(--ring-danger);
+}
+
+.tx-icon-btn {
+	display: inline-grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: var(--radius-md);
+	color: var(--ctp-overlay1);
+	background-color: transparent;
+	border: 1px solid transparent;
+	transition: color 180ms var(--ease-out),
+				background-color 180ms var(--ease-out),
+				border-color 180ms var(--ease-out),
+				transform 160ms var(--ease-out),
+				box-shadow 180ms var(--ease-out);
+	cursor: pointer;
+}
+.tx-icon-btn:hover {
+	color: var(--ctp-lavender);
+	background-color: color-mix(in oklch, var(--ctp-surface1) 35%, transparent);
+	border-color: color-mix(in oklch, var(--ctp-surface1) 55%, transparent);
+}
+.tx-icon-btn:focus-visible {
+	outline: none;
+	box-shadow: var(--ring-accent);
+}
+.tx-icon-btn.is-danger:hover {
+	color: var(--ctp-red);
+	background-color: color-mix(in oklch, var(--ctp-red) 10%, transparent);
+	border-color: color-mix(in oklch, var(--ctp-red) 30%, transparent);
+}
+
+/* Floating theme toggle style */
+.tx-icon-btn-float {
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: var(--radius-full);
+	background-color: var(--ctp-mantle);
+	border: 1px solid color-mix(in oklch, var(--ctp-surface1) 60%, transparent);
+	color: var(--ctp-subtext1);
+	box-shadow: var(--shadow-sm);
+}
+.tx-icon-btn-float:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-md);
+	color: var(--ctp-lavender);
+}
+
+.tx-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.2rem 0.625rem;
+	background-color: color-mix(in oklch, var(--ctp-surface1) 40%, transparent);
+	color: var(--ctp-subtext1);
+	border-radius: var(--radius-full);
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1;
+	min-height: 1.5rem;
+}
+
+.tx-chip-accent {
+	background-color: color-mix(in oklch, var(--ctp-lavender) 14%, transparent);
+	color: var(--ctp-lavender);
+}
+
+.tx-chip-danger {
+	background-color: color-mix(in oklch, var(--ctp-red) 14%, transparent);
+	color: var(--ctp-red);
+}
+
+/* Inline highlight for values — small pill inside chips/text */
+.tx-hl {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.05rem 0.4rem;
+	border-radius: var(--radius-sm);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.25;
+}
+.tx-hl-green {
+	background-color: color-mix(in oklch, var(--ctp-green) 18%, transparent);
+	color: var(--ctp-green);
+}
+.tx-hl-peach {
+	background-color: color-mix(in oklch, var(--ctp-peach) 20%, transparent);
+	color: var(--ctp-peach);
+}
+.tx-hl-lavender {
+	background-color: color-mix(in oklch, var(--ctp-lavender) 18%, transparent);
+	color: var(--ctp-lavender);
+}
+.tx-hl-sky {
+	background-color: color-mix(in oklch, var(--ctp-sky) 20%, transparent);
+	color: var(--ctp-sky);
+}
+.tx-hl-red {
+	background-color: color-mix(in oklch, var(--ctp-red) 18%, transparent);
+	color: var(--ctp-red);
+}
+
+.tx-icon-badge {
+	display: grid;
+	place-items: center;
+	width: 2rem;
+	height: 2rem;
+	border-radius: var(--radius-md);
+	background-color: color-mix(in oklch, var(--ctp-lavender) 12%, transparent);
+	color: var(--ctp-lavender);
+	flex-shrink: 0;
+}
+.tx-icon-badge-lg {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: var(--radius-lg);
+}
+
+.tx-divider {
+	border: 0;
+	border-top: 1px solid color-mix(in oklch, var(--ctp-surface1) 50%, transparent);
+	margin: 0;
+}
+
+/* Select wrapper with chevron affordance */
+.tx-select-wrap {
+	position: relative;
+}
+.tx-select-wrap > select {
+	appearance: none;
+	-webkit-appearance: none;
+	padding-right: 2.5rem;
+}
+.tx-select-wrap > .tx-select-chevron {
+	position: absolute;
+	right: 0.75rem;
+	top: 50%;
+	transform: translateY(-50%);
+	pointer-events: none;
+	color: var(--ctp-overlay1);
+	display: grid;
+	place-items: center;
+}
+
+/* Empty state (dashed) */
+.tx-empty {
+	border: 1px dashed color-mix(in oklch, var(--ctp-surface1) 80%, transparent);
+	background-color: color-mix(in oklch, var(--ctp-mantle) 50%, transparent);
+	border-radius: var(--radius-lg);
+	padding: 2rem 1.25rem;
+	text-align: center;
+	color: var(--ctp-overlay1);
+}
+
+/* Shipping method card */
+.tx-method-card {
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	padding: 0.875rem 1rem;
+	background-color: var(--ctp-mantle);
+	border: 1px solid color-mix(in oklch, var(--ctp-surface1) 60%, transparent);
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	transition: border-color 180ms var(--ease-out),
+				background-color 180ms var(--ease-out),
+				box-shadow 180ms var(--ease-out);
+}
+.tx-method-card:hover {
+	border-color: color-mix(in oklch, var(--ctp-lavender) 45%, transparent);
+}
+.tx-method-card.is-selected {
+	border-color: var(--ctp-lavender);
+	background-color: color-mix(in oklch, var(--ctp-lavender) 6%, var(--ctp-mantle));
+	box-shadow: var(--shadow-sm);
+}
+
+/* Summary hero card */
+.tx-summary {
+	position: relative;
+	overflow: hidden;
+	background-color: var(--ctp-mantle);
+	border: 1px solid color-mix(in oklch, var(--ctp-surface1) 80%, transparent);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-md);
+	padding: 1.5rem;
+}
+.tx-summary::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 auto 0;
+	height: 128px;
+	background: radial-gradient(60% 100% at 50% 0%,
+		color-mix(in oklch, var(--ctp-lavender) 18%, transparent) 0%,
+		transparent 70%);
+	opacity: 0.6;
+	pointer-events: none;
+}
+.tx-summary > * {
+	position: relative;
+}
+
+/* Animations */
+@media (prefers-reduced-motion: no-preference) {
+	.tx-anim-in {
+		animation: tx-fade-up 280ms var(--ease-out) both;
+	}
+}
+
+@keyframes tx-fade-up {
+	from { opacity: 0; transform: translateY(6px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+.tx-chevron-toggle {
+	transition: transform 200ms var(--ease-out);
+}
+.tx-chevron-toggle.is-open {
+	transform: rotate(90deg);
 }
 
 @theme inline {

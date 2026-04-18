@@ -1,10 +1,17 @@
 <script lang="ts">
 	import { products, selectedShippingMethod, selectedState } from '$lib/stores/cart';
 	import { exchangeStore } from '$lib/stores/exchange';
-	import { calculateTaxes, calculateShipping, calculateTotalWeight, distributeShipping, resolveIcmsRate } from '$lib/calc/engine';
+	import {
+		calculateTaxes,
+		calculateShipping,
+		calculateTotalWeight,
+		distributeShipping,
+		resolveIcmsRate
+	} from '$lib/calc/engine';
 	import type { RateTable, ShippingTable } from '$lib/calc/types';
 	import ratesData from '$lib/data/rates.json';
 	import shippingData from '$lib/data/shipping.json';
+	import Icon from './Icon.svelte';
 
 	function getRateTable(): RateTable {
 		return {
@@ -21,7 +28,12 @@
 
 	const totalWeight = $derived(calculateTotalWeight($products));
 	const shipping = $derived(
-		calculateShipping(totalWeight, $selectedShippingMethod, shippingData as ShippingTable, $exchangeStore.jpyToBrl)
+		calculateShipping(
+			totalWeight,
+			$selectedShippingMethod,
+			shippingData as ShippingTable,
+			$exchangeStore.jpyToBrl
+		)
 	);
 
 	const summary = $derived.by(() => {
@@ -53,31 +65,45 @@
 </script>
 
 {#if summary}
-	<div class="rounded-lg border-2 border-ctp-lavender/30 bg-gradient-to-br from-ctp-surface0 to-ctp-mantle p-5 shadow-sm">
-		<h2 class="mb-4 text-lg font-semibold text-ctp-text">Resumo Total</h2>
+	<aside class="tx-summary">
+		<div class="mb-4 flex items-center gap-3">
+			<span class="tx-icon-badge" aria-hidden="true">
+				<Icon name="receipt" size={16} />
+			</span>
+			<h2 class="text-base font-semibold text-ctp-text">Resumo do pedido</h2>
+		</div>
 
-		<div class="space-y-2 text-sm">
+		<div class="space-y-2.5 text-sm">
 			<div class="flex justify-between">
 				<span class="text-ctp-subtext0">Produtos ({$products.length})</span>
-				<span class="font-mono text-ctp-text">{fmt(summary.subtotalProductsBRL)}</span>
+				<span class="tx-mono text-ctp-text">{fmt(summary.subtotalProductsBRL)}</span>
 			</div>
 			<div class="flex justify-between">
 				<span class="text-ctp-red">Impostos</span>
-				<span class="font-mono text-ctp-red">{fmt(summary.subtotalTaxesBRL)}</span>
+				<span class="tx-mono text-ctp-red">{fmt(summary.subtotalTaxesBRL)}</span>
 			</div>
 			<div class="flex justify-between">
 				<span class="text-ctp-subtext0">Frete</span>
-				<span class="font-mono text-ctp-text">{fmt(summary.shippingBRL)}</span>
+				<span class="tx-mono text-ctp-text">{fmt(summary.shippingBRL)}</span>
 			</div>
-			<hr class="border-ctp-surface1" />
-			<div class="flex justify-between text-xl font-bold">
-				<span class="text-ctp-text">TOTAL</span>
-				<span class="text-ctp-lavender">{fmt(summary.grandTotalBRL)}</span>
+			<hr class="tx-divider" />
+			<div class="flex items-end justify-between pt-1">
+				<span class="text-xs font-medium tracking-wider text-ctp-subtext0 uppercase">
+					Total
+				</span>
+				<span class="tx-mono text-[1.75rem] font-bold tracking-tight text-ctp-lavender">
+					{fmt(summary.grandTotalBRL)}
+				</span>
 			</div>
 		</div>
 
-		<p class="mt-3 text-xs text-ctp-overlay0">
-			Valores estimados. Taxas reais podem variar conforme classificação aduaneira.
+		<p class="mt-4 flex items-start gap-2 text-xs text-ctp-overlay1">
+			<span class="mt-0.5 shrink-0 text-ctp-overlay0" aria-hidden="true">
+				<Icon name="info" size={14} />
+			</span>
+			<span>
+				Valores estimados. Taxas reais podem variar conforme classificação aduaneira.
+			</span>
 		</p>
-	</div>
+	</aside>
 {/if}

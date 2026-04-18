@@ -4,10 +4,11 @@
 	import { calculateShipping, calculateTotalWeight } from '$lib/calc/engine';
 	import type { ShippingMethod, ShippingTable } from '$lib/calc/types';
 	import shippingData from '$lib/data/shipping.json';
+	import Icon, { type IconName } from './Icon.svelte';
 
-	const methods: { id: ShippingMethod; label: string; time: string }[] = [
-		{ id: 'ems', label: 'EMS (Expresso)', time: '~7-10 dias' },
-		{ id: 'airmail', label: 'Airmail Parcel (Aéreo)', time: '~2-3 semanas' }
+	const methods: { id: ShippingMethod; label: string; time: string; icon: IconName }[] = [
+		{ id: 'ems', label: 'EMS (Expresso)', time: '~7–10 dias', icon: 'bolt' },
+		{ id: 'airmail', label: 'Airmail Parcel (Aéreo)', time: '~2–3 semanas', icon: 'paper-plane' }
 	];
 
 	const totalWeight = $derived(calculateTotalWeight($products));
@@ -22,37 +23,53 @@
 </script>
 
 {#if $products.length > 0}
-	<div class="rounded-lg border border-ctp-surface0 bg-ctp-mantle p-4 shadow-sm">
-		<h2 class="mb-3 text-lg font-semibold text-ctp-text">Frete</h2>
-
-		<div class="mb-3 text-sm text-ctp-subtext0">
-			Peso total: <span class="font-medium">{totalWeight}g</span> ({(totalWeight / 1000).toFixed(2)}kg)
+	<section class="tx-card p-5">
+		<div class="mb-4 flex items-center gap-3">
+			<span class="tx-icon-badge" aria-hidden="true">
+				<Icon name="shipping-truck" size={16} />
+			</span>
+			<h2 class="text-base font-semibold text-ctp-text">Frete</h2>
+			<span class="tx-chip ml-auto tx-num">
+				{totalWeight}g · {(totalWeight / 1000).toFixed(2)}kg
+			</span>
 		</div>
 
 		<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
 			{#each methods as method}
-				{@const result = calculateShipping(totalWeight, method.id, shippingData as ShippingTable, $exchangeStore.jpyToBrl)}
+				{@const result = calculateShipping(
+					totalWeight,
+					method.id,
+					shippingData as ShippingTable,
+					$exchangeStore.jpyToBrl
+				)}
 				<label
-					class="flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors
-						{$selectedShippingMethod === method.id
-							? 'border-ctp-lavender bg-ctp-surface0'
-							: 'border-ctp-surface1 hover:border-ctp-surface2'}"
+					class="tx-method-card"
+					class:is-selected={$selectedShippingMethod === method.id}
 				>
 					<input
 						type="radio"
 						name="shipping-method"
 						value={method.id}
 						bind:group={$selectedShippingMethod}
-						class="accent-ctp-lavender"
+						class="sr-only"
 					/>
-					<div class="flex-1">
-						<div class="text-sm font-medium text-ctp-text">{method.label}</div>
-						<div class="text-xs text-ctp-overlay1">{method.time}</div>
+					<span
+						class="tx-icon-badge"
+						class:tx-chip-accent={$selectedShippingMethod === method.id}
+						aria-hidden="true"
+					>
+						<Icon name={method.icon} size={16} />
+					</span>
+					<div class="min-w-0 flex-1">
+						<div class="text-sm font-semibold text-ctp-text">{method.label}</div>
+						<div class="text-xs text-ctp-subtext0">{method.time}</div>
 					</div>
 					<div class="text-right">
 						{#if result.costJPY > 0}
-							<div class="text-sm font-semibold text-ctp-text">{fmt(result.costBRL)}</div>
-							<div class="text-xs text-ctp-overlay1">{fmtJpy(result.costJPY)}</div>
+							<div class="tx-num text-sm font-semibold text-ctp-text">
+								{fmt(result.costBRL)}
+							</div>
+							<div class="tx-num text-xs text-ctp-subtext0">{fmtJpy(result.costJPY)}</div>
 						{:else}
 							<div class="text-xs text-ctp-overlay0">Indisponível</div>
 						{/if}
@@ -62,17 +79,15 @@
 		</div>
 
 		{#if $products.length > 1}
-			<div class="mt-3 flex items-center gap-2">
+			<label class="mt-4 flex items-center gap-2 text-sm text-ctp-subtext1">
 				<input
 					type="checkbox"
 					id="single-package"
 					bind:checked={$singlePackage}
-					class="rounded accent-ctp-lavender"
+					class="accent-ctp-lavender"
 				/>
-				<label for="single-package" class="text-sm text-ctp-subtext1">
-					Enviar tudo no mesmo pacote
-				</label>
-			</div>
+				Enviar tudo no mesmo pacote
+			</label>
 		{/if}
-	</div>
+	</section>
 {/if}
