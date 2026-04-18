@@ -9,6 +9,20 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { products, clearCart } from '$lib/stores/cart';
+	import ratesData from '$lib/data/rates.json';
+
+	const lastVerified = $derived(new Date(ratesData.lastVerified));
+	const daysSinceVerified = $derived(
+		Math.floor((Date.now() - lastVerified.getTime()) / 86_400_000)
+	);
+	const verifiedLabel = $derived(
+		lastVerified.toLocaleDateString('pt-BR', {
+			day: '2-digit',
+			month: '2-digit',
+			year: 'numeric'
+		})
+	);
+	const isStale = $derived(daysSinceVerified > 30);
 </script>
 
 <svelte:head>
@@ -75,6 +89,12 @@
 	>
 		<p>
 			Os valores apresentados são estimativas. Consulte a Receita Federal para valores oficiais.
+		</p>
+		<p>
+			Alíquotas verificadas em
+			<span class:text-ctp-yellow={isStale} class:tx-num={true}>{verifiedLabel}</span>
+			<span class="text-ctp-overlay1">({daysSinceVerified}d)</span>
+			· Câmbio ao vivo via BCB
 		</p>
 		<p>Taxômetro &copy; {new Date().getFullYear()}</p>
 	</footer>

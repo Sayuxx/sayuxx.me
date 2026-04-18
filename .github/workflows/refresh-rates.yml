@@ -1,0 +1,56 @@
+name: Refresh exchange rates
+
+on:
+  # PTAX é publicado pelo BCB ~13h BRT em dia útil, uma vez por dia. O app já
+  # busca PTAX ao vivo no navegador; esse JSON é só fallback. Por isso rodamos
+  # 1×/dia às 17:30 UTC (~14:30 BRT), 30min depois da publicação típica.
+  # workflow_dispatch permite disparar manualmente quando precisar.
+  schedule:
+    - cron: '30 17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: refresh-rates
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Refresh BCB exchange rates
+        working-directory: taxometro
+        run: node scripts/refresh-rates.mjs
+
+      - name: Commit if changed
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -n $(git status --porcelain taxometro/src/lib/data/rates.json) ]]; then
+            git add taxometro/src/lib/data/rates.json
+            git commit -m "chore(rates): refresh BCB PTAX"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Pushed update."
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No change."
+          fi
+
+      # GITHUB_TOKEN-driven pushes do not trigger other workflows by default.
+      # Dispatch deploy.yml explicitly so the live site picks up the new rates.
+      - name: Trigger deploy
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref main

@@ -1,0 +1,85 @@
+name: Check stale tax data
+
+on:
+  # Daily at 11:17 UTC — diário porque alíquotas tributárias podem mudar a qualquer momento
+  # via Decreto/Lei/Convênio CONFAZ; uma issue por mês é suficiente, mas checagem diária
+  # garante que detectamos no dia em que o limite é cruzado.
+  schedule:
+    - cron: '17 11 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check rates.json freshness and open issue if stale
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const rates = JSON.parse(fs.readFileSync('./taxometro/src/lib/data/rates.json', 'utf-8'));
+            const lastVerified = new Date(rates.lastVerified);
+            const days = Math.floor((Date.now() - lastVerified.getTime()) / 86400000);
+
+            const STALE_AFTER_DAYS = 30;
+            if (days < STALE_AFTER_DAYS) {
+              core.info(`rates.json verified ${days}d ago — fresh.`);
+              return;
+            }
+
+            const label = 'rates-stale';
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: label
+            });
+            if (existing.data.length > 0) {
+              core.info(`Issue already open: #${existing.data[0].number}`);
+              return;
+            }
+
+            // Ensure label exists
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label
+              });
+            } catch {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+                color: 'fbca04',
+                description: 'rates.json precisa de revisão manual'
+              });
+            }
+
+            const body = [
+              `\`taxometro/src/lib/data/rates.json\` foi verificado pela última vez **há ${days} dias** (${rates.lastVerified}).`,
+              '',
+              '## Reverificar',
+              '- [ ] **II** — Lei 14.902/2024 ou alteração superveniente',
+              '- [ ] **ICMS por estado** — Convênio CONFAZ + decretos estaduais (lista 20%: AC, AL, BA, CE, PB, PI, RN, RR, SE)',
+              '- [ ] **IOF cartão** — Decreto 12.466/2025 (3,5% fixo) ou substituto',
+              '- [ ] **Despacho postal Correios** — tabela de preços vigente',
+              '- [ ] **CIF threshold** — US$ 50',
+              '',
+              'Após confirmar/atualizar, bumpe `lastVerified` em `rates.json` e feche essa issue.'
+            ].join('\n');
+
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Reverificar rates.json — ${days}d sem revisão`,
+              labels: [label],
+              body
+            });
+            core.notice(`Opened issue #${created.data.number}`);
