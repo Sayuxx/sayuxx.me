@@ -3,10 +3,11 @@
 
 	interface Props {
 		breakdown: TaxBreakdown;
+		icmsRate: number;
 		expanded?: boolean;
 	}
 
-	let { breakdown, expanded = false }: Props = $props();
+	let { breakdown, icmsRate, expanded = false }: Props = $props();
 	let isOpen = $state(expanded);
 
 	function fmt(value: number): string {
@@ -39,7 +40,7 @@
 				<span class="font-mono text-ctp-red">{fmt(breakdown.ii)}</span>
 			</div>
 			<div class="flex justify-between">
-				<span class="text-ctp-subtext0">ICMS (17%)</span>
+				<span class="text-ctp-subtext0">ICMS ({(icmsRate * 100).toFixed(0)}%)</span>
 				<span class="font-mono text-ctp-red">{fmt(breakdown.icms)}</span>
 			</div>
 			<div class="flex justify-between">

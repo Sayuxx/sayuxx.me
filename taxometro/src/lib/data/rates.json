@@ -2,7 +2,7 @@
 	"exchangeRates": {
 		"jpyToBrl": 0.0374,
 		"jpyToUsd": 0.0067,
-		"lastUpdated": "2026-04-16"
+		"lastUpdated": "2026-04-18"
 	},
 	"taxes": {
 		"iiRateLow": 0.20,
@@ -11,5 +11,34 @@
 		"cifThresholdUSD": 50,
 		"icmsRate": 0.17,
 		"iofRate": 0.035
+	},
+	"icmsByState": {
+		"AC": 0.20,
+		"AL": 0.20,
+		"AM": 0.17,
+		"AP": 0.17,
+		"BA": 0.20,
+		"CE": 0.20,
+		"DF": 0.17,
+		"ES": 0.17,
+		"GO": 0.17,
+		"MA": 0.17,
+		"MG": 0.20,
+		"MS": 0.17,
+		"MT": 0.17,
+		"PA": 0.17,
+		"PB": 0.20,
+		"PE": 0.17,
+		"PI": 0.20,
+		"PR": 0.17,
+		"RJ": 0.17,
+		"RN": 0.20,
+		"RO": 0.17,
+		"RR": 0.20,
+		"RS": 0.17,
+		"SC": 0.17,
+		"SE": 0.20,
+		"SP": 0.17,
+		"TO": 0.17
 	}
 }

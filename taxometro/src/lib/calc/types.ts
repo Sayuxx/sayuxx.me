@@ -38,7 +38,7 @@ export interface RateTable {
 	};
 }
 
-export type ShippingMethod = 'ems' | 'sal' | 'surface' | 'airmail';
+export type ShippingMethod = 'ems' | 'airmail';
 
 export interface ShippingRateEntry {
 	maxGrams: number;

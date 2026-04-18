@@ -7,9 +7,7 @@
 
 	const methods: { id: ShippingMethod; label: string; time: string }[] = [
 		{ id: 'ems', label: 'EMS (Expresso)', time: '~7-10 dias' },
-		{ id: 'sal', label: 'SAL (Econômico Aéreo)', time: '~2-4 semanas' },
-		{ id: 'surface', label: 'Surface (Marítimo)', time: '~2-3 meses' },
-		{ id: 'airmail', label: 'Airmail (Aéreo)', time: '~1-2 semanas, até 2kg' }
+		{ id: 'airmail', label: 'Airmail Parcel (Aéreo)', time: '~2-3 semanas' }
 	];
 
 	const totalWeight = $derived(calculateTotalWeight($products));

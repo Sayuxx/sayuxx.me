@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { products, removeProduct, updateProduct } from '$lib/stores/cart';
+	import { products, removeProduct, updateProduct, selectedState } from '$lib/stores/cart';
 	import { exchangeStore } from '$lib/stores/exchange';
-	import { calculateTaxes } from '$lib/calc/engine';
+	import { calculateTaxes, resolveIcmsRate } from '$lib/calc/engine';
 	import type { Product, ProductCategory, RateTable } from '$lib/calc/types';
 	import ratesData from '$lib/data/rates.json';
 	import categoriesData from '$lib/data/categories.json';
@@ -12,13 +12,16 @@
 		categoryLabels[cat.id] = cat.label;
 	}
 
-	function getRateTable(exchange: typeof $exchangeStore): RateTable {
+	function getRateTable(exchange: typeof $exchangeStore, state: string): RateTable {
 		return {
 			exchangeRates: {
 				jpyToBrl: exchange.jpyToBrl,
 				jpyToUsd: exchange.jpyToUsd
 			},
-			taxes: ratesData.taxes
+			taxes: {
+				...ratesData.taxes,
+				icmsRate: resolveIcmsRate(state, ratesData.icmsByState, ratesData.taxes.icmsRate)
+			}
 		};
 	}
 
@@ -79,7 +82,7 @@
 {:else}
 	<div class="space-y-3">
 		{#each $products as product (product.id)}
-			{@const rates = getRateTable($exchangeStore)}
+			{@const rates = getRateTable($exchangeStore, $selectedState)}
 			{@const breakdown = calculateTaxes(product, rates)}
 			<div class="rounded-lg border border-ctp-surface0 bg-ctp-mantle p-4 shadow-sm">
 				{#if editingId === product.id}
@@ -182,7 +185,7 @@
 						</div>
 					</div>
 					<div class="mt-2">
-						<TaxBreakdown {breakdown} />
+						<TaxBreakdown {breakdown} icmsRate={rates.taxes.icmsRate} />
 					</div>
 				{/if}
 			</div>

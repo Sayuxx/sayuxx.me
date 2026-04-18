@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { products, selectedShippingMethod } from '$lib/stores/cart';
+	import { products, selectedShippingMethod, selectedState } from '$lib/stores/cart';
 	import { exchangeStore } from '$lib/stores/exchange';
-	import { calculateTaxes, calculateShipping, calculateTotalWeight, distributeShipping } from '$lib/calc/engine';
+	import { calculateTaxes, calculateShipping, calculateTotalWeight, distributeShipping, resolveIcmsRate } from '$lib/calc/engine';
 	import type { RateTable, ShippingTable } from '$lib/calc/types';
 	import ratesData from '$lib/data/rates.json';
 	import shippingData from '$lib/data/shipping.json';
@@ -12,7 +12,10 @@
 				jpyToBrl: $exchangeStore.jpyToBrl,
 				jpyToUsd: $exchangeStore.jpyToUsd
 			},
-			taxes: ratesData.taxes
+			taxes: {
+				...ratesData.taxes,
+				icmsRate: resolveIcmsRate($selectedState, ratesData.icmsByState, ratesData.taxes.icmsRate)
+			}
 		};
 	}
 

@@ -1,6 +1,17 @@
 import type { Product, RateTable, TaxBreakdown, ShippingTable, ShippingMethod, ShippingResult } from './types';
 
 /**
+ * Resolve the ICMS rate for a given state, falling back to the default rate.
+ */
+export function resolveIcmsRate(
+	state: string,
+	icmsByState: Record<string, number> | undefined,
+	defaultRate: number
+): number {
+	return icmsByState?.[state] ?? defaultRate;
+}
+
+/**
  * Calculate the CIF value in USD for a single product (price * quantity converted to USD + shipping portion).
  * shippingPerItemUSD is the shipping cost allocated to this product in USD.
  */
