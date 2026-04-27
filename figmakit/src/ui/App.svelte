@@ -33,7 +33,11 @@
 	}
 
 	function generate() {
-		const payload: GenerateFoundationsPayload = { colors, typeRatio, fontFamily };
+		const payload: GenerateFoundationsPayload = {
+			colors: [...colors],
+			typeRatio,
+			fontFamily
+		};
 		foundationsBusy = true;
 		send({ type: 'generate-foundations', payload });
 	}
