@@ -46,10 +46,12 @@ async function resetCollection(name: string): Promise<VariableCollection> {
 	return figma.variables.createVariableCollection(name);
 }
 
-function ensureModes(
-	collection: VariableCollection,
-	names: string[]
-): Record<string, string> {
+interface EnsureModesResult {
+	modes: Record<string, string>;
+	multiMode: boolean;
+}
+
+function ensureModes(collection: VariableCollection, names: string[]): EnsureModesResult {
 	const result: Record<string, string> = {};
 	const [first, ...rest] = collection.modes;
 	collection.renameMode(first.modeId, names[0]);
@@ -59,21 +61,31 @@ function ensureModes(
 		collection.removeMode(extra.modeId);
 	}
 
+	let multiMode = true;
 	for (let i = 1; i < names.length; i++) {
-		result[names[i]] = collection.addMode(names[i]);
+		try {
+			result[names[i]] = collection.addMode(names[i]);
+		} catch {
+			multiMode = false;
+			figma.notify('Free plan: dark mode skipped — Pro required for multi-mode variables.', {
+				timeout: 4000
+			});
+			break;
+		}
 	}
-	return result;
+	return { modes: result, multiMode };
 }
 
 function createColorVariable(
 	name: string,
 	collection: VariableCollection,
 	modes: Record<string, string>,
-	values: ColorModes
+	values: ColorModes,
+	multiMode: boolean
 ): Variable {
 	const v = figma.variables.createVariable(name, collection, 'COLOR');
 	v.setValueForMode(modes.light, hexToRgb(values.light));
-	v.setValueForMode(modes.dark, hexToRgb(values.dark));
+	if (multiMode) v.setValueForMode(modes.dark, hexToRgb(values.dark));
 	return v;
 }
 
@@ -82,14 +94,18 @@ function setScaleVariables(
 	scale: ColorScale,
 	collection: VariableCollection,
 	modes: Record<string, string>,
+	multiMode: boolean,
 	target: Map<string, Variable>
 ): void {
 	for (const step of STEPS) {
 		const name = `${prefix}/${step}`;
-		const v = createColorVariable(name, collection, modes, {
-			light: scale[step],
-			dark: scale[step]
-		});
+		const v = createColorVariable(
+			name,
+			collection,
+			modes,
+			{ light: scale[step], dark: scale[step] },
+			multiMode
+		);
 		target.set(name, v);
 	}
 }
@@ -99,11 +115,12 @@ function setAliasVariable(
 	light: Variable,
 	dark: Variable,
 	collection: VariableCollection,
-	modes: Record<string, string>
+	modes: Record<string, string>,
+	multiMode: boolean
 ): Variable {
 	const v = figma.variables.createVariable(name, collection, 'COLOR');
 	v.setValueForMode(modes.light, figma.variables.createVariableAlias(light));
-	v.setValueForMode(modes.dark, figma.variables.createVariableAlias(dark));
+	if (multiMode) v.setValueForMode(modes.dark, figma.variables.createVariableAlias(dark));
 	return v;
 }
 
@@ -113,18 +130,18 @@ export async function applyPaletteVariables(palette: PaletteSet): Promise<{
 	semanticAliases: Map<SemanticAliasName, Variable>;
 }> {
 	const collection = await resetCollection(VARIABLE_COLLECTIONS.colors);
-	const modes = ensureModes(collection, ['light', 'dark']);
+	const { modes, multiMode } = ensureModes(collection, ['light', 'dark']);
 	const colorByName = new Map<string, Variable>();
 
-	setScaleVariables('primary', palette.primary, collection, modes, colorByName);
+	setScaleVariables('primary', palette.primary, collection, modes, multiMode, colorByName);
 	if (palette.accent) {
-		setScaleVariables('accent', palette.accent, collection, modes, colorByName);
+		setScaleVariables('accent', palette.accent, collection, modes, multiMode, colorByName);
 	}
-	setScaleVariables('neutral', palette.neutral, collection, modes, colorByName);
+	setScaleVariables('neutral', palette.neutral, collection, modes, multiMode, colorByName);
 
 	if (palette.semantic) {
 		(['success', 'warn', 'error', 'info'] as SemanticName[]).forEach((name) => {
-			setScaleVariables(name, palette.semantic![name], collection, modes, colorByName);
+			setScaleVariables(name, palette.semantic![name], collection, modes, multiMode, colorByName);
 		});
 	}
 
@@ -133,7 +150,7 @@ export async function applyPaletteVariables(palette: PaletteSet): Promise<{
 		const lightVar = colorByName.get(mapping.light);
 		const darkVar = colorByName.get(mapping.dark);
 		if (!lightVar || !darkVar) continue;
-		const v = setAliasVariable(aliasName, lightVar, darkVar, collection, modes);
+		const v = setAliasVariable(aliasName, lightVar, darkVar, collection, modes, multiMode);
 		semanticAliases.set(aliasName as SemanticAliasName, v);
 	}
 

@@ -42,3 +42,4 @@ npm run test         # vitest (palette/generation only)
 - Palette uses OKLCH for perceptually uniform lightness across hues. See [src/lib/palette/generate.ts](src/lib/palette/generate.ts).
 - Re-running "generate foundations" replaces existing `figmakit/*` collections and `text/`, `shadow/` styles. It does not touch other variables/styles.
 - Inserting the style guide deletes any existing frame named `figmakit/style-guide` on the current page before creating a new one.
+- **Free Figma plan**: variables are generated in a single `light` mode only — multi-mode collections require Pro/Organization. The plugin notifies and degrades gracefully; on Pro, both `light` and `dark` modes are created and the semantic aliases (`bg`, `surface`, `text`, …) flip per mode.
