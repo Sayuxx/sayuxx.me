@@ -2,26 +2,34 @@ import type { TypeName } from '../tokens/typography';
 import { buildTypeScale } from '../tokens/typography';
 import { RADIUS_TOKENS, SPACE_STEPS, type RadiusName, type SpaceStep } from '../tokens/spacing';
 import { SHADOW_TOKENS } from '../tokens/shadows';
-import { STEPS } from '../palette/types';
-import type { SemanticAliasName } from '../figma/variables';
 import { loadFamilyRegular } from '../figma/styles';
+import { hexToRgb } from '../figma/color';
 import { ICONS } from './icons';
 
 export interface StyleGuideContext {
 	colorByName: Map<string, Variable>;
-	semanticAliases: Map<SemanticAliasName, Variable>;
 	spaceByStep: Map<SpaceStep, Variable>;
 	radiusByName: Map<RadiusName, Variable>;
 	textStyles: Map<TypeName, TextStyle>;
 	effectStyles: Map<string, EffectStyle>;
 	typeRatio: 1.2 | 1.333;
-	hasAccent: boolean;
-	hasSemantic: boolean;
 	fontFamily: string;
 	font: FontName;
 }
 
 const STYLE_GUIDE_NAME = 'figmakit/style-guide';
+
+const CHROME = {
+	bg: hexToRgb('#ffffff'),
+	surface: hexToRgb('#ffffff'),
+	border: hexToRgb('#e5e5e5'),
+	text: hexToRgb('#1a1a1a'),
+	textMuted: hexToRgb('#666666')
+} as const;
+
+function solid(rgb: RGB): SolidPaint[] {
+	return [{ type: 'SOLID', color: rgb }];
+}
 
 function fillFromVar(v: Variable | undefined): SolidPaint[] {
 	if (!v) return [{ type: 'SOLID', color: { r: 0.5, g: 0.5, b: 0.5 } }];
@@ -57,13 +65,13 @@ function text(content: string, size: number, ctx: StyleGuideContext): TextNode {
 	t.fontName = ctx.font;
 	t.characters = content;
 	t.fontSize = size;
-	t.fills = fillFromVar(ctx.semanticAliases.get('text'));
+	t.fills = solid(CHROME.text);
 	return t;
 }
 
 function mutedText(content: string, size: number, ctx: StyleGuideContext): TextNode {
 	const t = text(content, size, ctx);
-	t.fills = fillFromVar(ctx.semanticAliases.get('text-muted'));
+	t.fills = solid(CHROME.textMuted);
 	return t;
 }
 
@@ -71,62 +79,36 @@ function sectionTitle(content: string, ctx: StyleGuideContext): TextNode {
 	return text(content, 24, ctx);
 }
 
-function swatch(varName: string, ctx: StyleGuideContext): FrameNode {
-	const v = ctx.colorByName.get(varName);
-	const cell = vstack(varName, {
-		layoutMode: 'VERTICAL',
-		paddingLeft: 8,
-		paddingRight: 8,
-		paddingTop: 8,
-		paddingBottom: 8,
-		itemSpacing: 4,
-		fills: fillFromVar(v)
-	});
-	cell.resize(64, 64);
-	cell.primaryAxisSizingMode = 'FIXED';
-	cell.counterAxisSizingMode = 'FIXED';
-	cell.primaryAxisAlignItems = 'MAX';
-	const label = figma.createText();
-	label.fontName = ctx.font;
-	label.fontSize = 10;
-	const step = varName.split('/')[1];
-	label.characters = step;
-	const onLight = isLightStep(step);
-	label.fills = onLight
-		? [{ type: 'SOLID', color: { r: 0, g: 0, b: 0 }, opacity: 0.6 }]
-		: [{ type: 'SOLID', color: { r: 1, g: 1, b: 1 }, opacity: 0.7 }];
-	cell.appendChild(label);
-	return cell;
+function readVariableHex(v: Variable): string {
+	const modeId = Object.keys(v.valuesByMode)[0];
+	const value = v.valuesByMode[modeId];
+	if (!value || typeof value !== 'object' || !('r' in value)) return '';
+	const r = Math.round((value as RGB).r * 255);
+	const g = Math.round((value as RGB).g * 255);
+	const b = Math.round((value as RGB).b * 255);
+	const hex = ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
+	return `#${hex}`;
 }
 
-function isLightStep(step: string): boolean {
-	const n = parseInt(step, 10);
-	return !isNaN(n) && n <= 400;
-}
-
-function scaleRow(label: string, prefix: string, ctx: StyleGuideContext): FrameNode {
-	const row = vstack(`${prefix}-row`, { itemSpacing: 8 });
-	row.appendChild(mutedText(label, 12, ctx));
-	const swatches = hstack(`${prefix}-swatches`, { itemSpacing: 4 });
-	for (const step of STEPS) {
-		swatches.appendChild(swatch(`${prefix}/${step}`, ctx));
+function buildPaletteSection(ctx: StyleGuideContext): FrameNode {
+	const section = vstack('palette', { itemSpacing: 16 });
+	section.appendChild(sectionTitle('Colors', ctx));
+	const list = vstack('color-list', { itemSpacing: 12 });
+	for (const [name, variable] of ctx.colorByName) {
+		const row = hstack(`color-${name}`, { itemSpacing: 16, counterAxisAlignItems: 'CENTER' });
+		const swatch = figma.createFrame();
+		swatch.name = `swatch-${name}`;
+		swatch.fills = fillFromVar(variable);
+		swatch.cornerRadius = 8;
+		swatch.resize(64, 64);
+		const labels = vstack(`labels-${name}`, { itemSpacing: 2 });
+		labels.appendChild(text(name, 14, ctx));
+		labels.appendChild(mutedText(readVariableHex(variable), 11, ctx));
+		row.appendChild(swatch);
+		row.appendChild(labels);
+		list.appendChild(row);
 	}
-	row.appendChild(swatches);
-	return row;
-}
-
-async function buildPaletteSection(ctx: StyleGuideContext): Promise<FrameNode> {
-	const section = vstack('palette', { itemSpacing: 20 });
-	section.appendChild(sectionTitle('Palette', ctx));
-	section.appendChild(scaleRow('primary', 'primary', ctx));
-	if (ctx.hasAccent) section.appendChild(scaleRow('accent', 'accent', ctx));
-	section.appendChild(scaleRow('neutral', 'neutral', ctx));
-	if (ctx.hasSemantic) {
-		section.appendChild(scaleRow('success', 'success', ctx));
-		section.appendChild(scaleRow('warn', 'warn', ctx));
-		section.appendChild(scaleRow('error', 'error', ctx));
-		section.appendChild(scaleRow('info', 'info', ctx));
-	}
+	section.appendChild(list);
 	return section;
 }
 
@@ -153,10 +135,16 @@ function buildTypographySection(ctx: StyleGuideContext): FrameNode {
 
 const SPACING_VISUAL_FACTOR = 6;
 
+function firstColorVar(ctx: StyleGuideContext): Variable | undefined {
+	const first = ctx.colorByName.values().next();
+	return first.done ? undefined : first.value;
+}
+
 function buildSpacingSection(ctx: StyleGuideContext): FrameNode {
 	const section = vstack('spacing', { itemSpacing: 16 });
 	section.appendChild(sectionTitle('Spacing', ctx));
 	const list = vstack('space-list', { itemSpacing: 4 });
+	const accent = firstColorVar(ctx);
 	for (const step of SPACE_STEPS) {
 		const variable = ctx.spaceByStep.get(step as SpaceStep);
 		if (!variable) continue;
@@ -166,7 +154,7 @@ function buildSpacingSection(ctx: StyleGuideContext): FrameNode {
 		label.layoutSizingHorizontal = 'FIXED';
 		const bar = figma.createFrame();
 		bar.name = `bar-${step}`;
-		bar.fills = fillFromVar(ctx.semanticAliases.get('accent'));
+		bar.fills = fillFromVar(accent);
 		bar.resize(Math.max(8, step * SPACING_VISUAL_FACTOR), 24);
 		row.appendChild(label);
 		row.appendChild(bar);
@@ -180,12 +168,13 @@ function buildRadiusSection(ctx: StyleGuideContext): FrameNode {
 	const section = vstack('radius', { itemSpacing: 16 });
 	section.appendChild(sectionTitle('Radius', ctx));
 	const row = hstack('radius-row', { itemSpacing: 16, counterAxisAlignItems: 'CENTER' });
+	const accent = firstColorVar(ctx);
 	for (const [name, value] of Object.entries(RADIUS_TOKENS) as [RadiusName, number][]) {
 		const variable = ctx.radiusByName.get(name);
 		const cell = vstack(`radius-${name}`, { itemSpacing: 8, counterAxisAlignItems: 'CENTER' });
 		const block = figma.createFrame();
 		block.name = `block-${name}`;
-		block.fills = fillFromVar(ctx.semanticAliases.get('accent'));
+		block.fills = fillFromVar(accent);
 		block.resize(64, 64);
 		const r = name === 'full' ? 32 : value;
 		block.cornerRadius = r;
@@ -206,7 +195,9 @@ function buildShadowsSection(ctx: StyleGuideContext): FrameNode {
 		const cell = vstack(`shadow-${token.name}`, { itemSpacing: 8, counterAxisAlignItems: 'CENTER' });
 		const card = figma.createFrame();
 		card.name = `card-${token.name}`;
-		card.fills = fillFromVar(ctx.semanticAliases.get('surface'));
+		card.fills = solid(CHROME.surface);
+		card.strokes = solid(CHROME.border);
+		card.strokeWeight = 1;
 		card.cornerRadius = 8;
 		card.resize(96, 64);
 		const style = ctx.effectStyles.get(token.name);
@@ -223,12 +214,11 @@ function buildIconsSection(ctx: StyleGuideContext): FrameNode {
 	const section = vstack('icons', { itemSpacing: 16 });
 	section.appendChild(sectionTitle('Icons', ctx));
 	const grid = hstack('icons-grid', { itemSpacing: 16 });
-	const textVar = ctx.semanticAliases.get('text');
 	for (const icon of ICONS) {
 		const cell = vstack(`icon-${icon.name}`, { itemSpacing: 6, counterAxisAlignItems: 'CENTER' });
 		const node = figma.createNodeFromSvg(icon.svg);
 		node.name = icon.name;
-		recolorChildren(node, textVar);
+		recolorChildren(node, CHROME.text);
 		cell.appendChild(node);
 		cell.appendChild(mutedText(icon.name, 10, ctx));
 		grid.appendChild(cell);
@@ -237,18 +227,15 @@ function buildIconsSection(ctx: StyleGuideContext): FrameNode {
 	return section;
 }
 
-function recolorChildren(node: SceneNode, variable: Variable | undefined): void {
-	if (!variable) return;
+function recolorChildren(node: SceneNode, rgb: RGB): void {
 	if ('strokes' in node && Array.isArray(node.strokes) && node.strokes.length > 0) {
-		const fresh: SolidPaint = { type: 'SOLID', color: { r: 0, g: 0, b: 0 } };
-		node.strokes = [figma.variables.setBoundVariableForPaint(fresh, 'color', variable)];
+		node.strokes = solid(rgb);
 	}
 	if ('fills' in node && Array.isArray(node.fills) && node.fills.length > 0) {
-		const fresh: SolidPaint = { type: 'SOLID', color: { r: 0, g: 0, b: 0 } };
-		node.fills = [figma.variables.setBoundVariableForPaint(fresh, 'color', variable)];
+		node.fills = solid(rgb);
 	}
 	if ('children' in node) {
-		for (const child of node.children) recolorChildren(child, variable);
+		for (const child of node.children) recolorChildren(child, rgb);
 	}
 }
 
@@ -269,20 +256,20 @@ export async function buildStyleGuide(ctx: StyleGuideContext): Promise<FrameNode
 		paddingTop: 64,
 		paddingBottom: 64,
 		itemSpacing: 48,
-		fills: fillFromVar(ctx.semanticAliases.get('bg'))
+		fills: solid(CHROME.bg)
 	});
 	root.layoutMode = 'VERTICAL';
 	root.primaryAxisSizingMode = 'AUTO';
 	root.counterAxisSizingMode = 'AUTO';
 
 	const header = vstack('header', { itemSpacing: 6 });
-	const title = text('Design Foundations', 32, ctx);
-	const subtitle = mutedText('Generated by figmakit · variables · text styles · effect styles', 12, ctx);
-	header.appendChild(title);
-	header.appendChild(subtitle);
+	header.appendChild(text('Design Foundations', 32, ctx));
+	header.appendChild(
+		mutedText('Generated by figmakit · variables · text styles · effect styles', 12, ctx)
+	);
 	root.appendChild(header);
 
-	root.appendChild(await buildPaletteSection(ctx));
+	root.appendChild(buildPaletteSection(ctx));
 	root.appendChild(buildTypographySection(ctx));
 	root.appendChild(buildSpacingSection(ctx));
 	root.appendChild(buildRadiusSection(ctx));

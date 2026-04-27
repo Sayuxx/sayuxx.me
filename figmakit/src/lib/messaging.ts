@@ -10,12 +10,10 @@ export type CodeToUi =
 	| { type: 'foundations-ready' }
 	| { type: 'style-guide-ready' }
 	| { type: 'error'; message: string }
-	| { type: 'restored'; primaryHex: string | null; fontFamily: string | null };
+	| { type: 'restored'; colors: string[] | null; fontFamily: string | null };
 
 export interface GenerateFoundationsPayload {
-	primaryHex: string;
-	accentHex: string | null;
-	includeSemantic: boolean;
+	colors: string[];
 	typeRatio: 1.2 | 1.333;
 	fontFamily: string;
 }

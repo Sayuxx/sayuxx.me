@@ -1,6 +1,5 @@
 import type { CodeToUi, GenerateFoundationsPayload, UiToCode } from './lib/messaging';
-import { buildPalette } from './lib/palette';
-import { applyPaletteVariables, applySpacingVariables } from './lib/figma/variables';
+import { applyBrandVariables, applySpacingVariables } from './lib/figma/variables';
 import { applyTextStyles, applyEffectStyles, loadFamilyRegular } from './lib/figma/styles';
 import { buildStyleGuide } from './lib/templates/styleGuide';
 import { lookupExisting } from './lib/figma/lookup';
@@ -13,15 +12,15 @@ figma.showUI(__html__, { width: 360, height: 640, themeColors: true });
 
 void (async () => {
 	const stored = await figma.clientStorage.getAsync(STORAGE_KEY).catch(() => null);
-	if (stored && typeof stored === 'object' && 'primaryHex' in stored) {
+	if (stored && typeof stored === 'object' && Array.isArray((stored as GenerateFoundationsPayload).colors)) {
 		lastConfig = stored as GenerateFoundationsPayload;
 		post({
 			type: 'restored',
-			primaryHex: lastConfig.primaryHex,
+			colors: lastConfig.colors,
 			fontFamily: lastConfig.fontFamily ?? null
 		});
 	} else {
-		post({ type: 'restored', primaryHex: null, fontFamily: null });
+		post({ type: 'restored', colors: null, fontFamily: null });
 	}
 })();
 
@@ -55,13 +54,10 @@ async function handleRequestFonts(): Promise<void> {
 }
 
 async function handleGenerate(payload: GenerateFoundationsPayload): Promise<void> {
-	const palette = buildPalette({
-		primaryHex: payload.primaryHex,
-		accentHex: payload.accentHex,
-		includeSemantic: payload.includeSemantic
-	});
-
-	await applyPaletteVariables(palette);
+	if (!payload.colors || payload.colors.length === 0) {
+		throw new Error('add at least one color');
+	}
+	await applyBrandVariables(payload.colors);
 	await applySpacingVariables();
 	await applyTextStyles(payload.typeRatio, payload.fontFamily);
 	await applyEffectStyles();
@@ -85,8 +81,6 @@ async function handleInsertGuide(): Promise<void> {
 	await buildStyleGuide({
 		...found,
 		typeRatio: lastConfig.typeRatio,
-		hasAccent: lastConfig.accentHex !== null,
-		hasSemantic: lastConfig.includeSemantic,
 		fontFamily: lastConfig.fontFamily,
 		font
 	});

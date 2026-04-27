@@ -3,18 +3,14 @@ import { TYPE_NAMES } from '../tokens/typography';
 import { RADIUS_TOKENS, SPACE_STEPS, type RadiusName, type SpaceStep } from '../tokens/spacing';
 import { SHADOW_TOKENS } from '../tokens/shadows';
 import { VARIABLE_COLLECTIONS } from '../messaging';
-import type { SemanticAliasName } from './variables';
 
 export interface LookupResult {
 	colorByName: Map<string, Variable>;
-	semanticAliases: Map<SemanticAliasName, Variable>;
 	spaceByStep: Map<SpaceStep, Variable>;
 	radiusByName: Map<RadiusName, Variable>;
 	textStyles: Map<TypeName, TextStyle>;
 	effectStyles: Map<string, EffectStyle>;
 }
-
-const SEMANTIC_NAMES: SemanticAliasName[] = ['bg', 'surface', 'border', 'text', 'text-muted', 'accent'];
 
 export async function lookupExisting(): Promise<LookupResult> {
 	const collections = await figma.variables.getLocalVariableCollectionsAsync();
@@ -22,20 +18,17 @@ export async function lookupExisting(): Promise<LookupResult> {
 	const spacing = collections.find((c) => c.name === VARIABLE_COLLECTIONS.spacing);
 
 	const colorByName = new Map<string, Variable>();
-	const semanticAliases = new Map<SemanticAliasName, Variable>();
 	const spaceByStep = new Map<SpaceStep, Variable>();
 	const radiusByName = new Map<RadiusName, Variable>();
 
 	if (colors) {
+		const colorVars: Variable[] = [];
 		for (const id of colors.variableIds) {
 			const v = await figma.variables.getVariableByIdAsync(id);
-			if (!v) continue;
-			if (SEMANTIC_NAMES.includes(v.name as SemanticAliasName)) {
-				semanticAliases.set(v.name as SemanticAliasName, v);
-			} else {
-				colorByName.set(v.name, v);
-			}
+			if (v) colorVars.push(v);
 		}
+		colorVars.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+		for (const v of colorVars) colorByName.set(v.name, v);
 	}
 
 	if (spacing) {
@@ -68,5 +61,5 @@ export async function lookupExisting(): Promise<LookupResult> {
 		}
 	}
 
-	return { colorByName, semanticAliases, spaceByStep, radiusByName, textStyles, effectStyles };
+	return { colorByName, spaceByStep, radiusByName, textStyles, effectStyles };
 }

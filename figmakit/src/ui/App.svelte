@@ -1,12 +1,9 @@
 <script lang="ts">
 	import type { CodeToUi, GenerateFoundationsPayload, UiToCode } from '../lib/messaging';
-	import { buildPalette } from '../lib/palette';
+	import { colorRoleName } from '../lib/palette';
 	import ColorPicker from './ColorPicker.svelte';
-	import ScalePreview from './ScalePreview.svelte';
 
-	let primaryHex = $state('#3b82f6');
-	let accentHex = $state<string | null>(null);
-	let includeSemantic = $state(true);
+	let colors = $state<string[]>(['#3b82f6']);
 	let typeRatio = $state<1.2 | 1.333>(1.2);
 	let fontFamily = $state('Inter');
 	let fonts = $state<string[]>([]);
@@ -15,26 +12,28 @@
 	let styleGuideBusy = $state(false);
 	let toast = $state<string | null>(null);
 
-	let palette = $derived.by(() => {
-		try {
-			return buildPalette({ primaryHex, accentHex, includeSemantic });
-		} catch {
-			return null;
-		}
-	});
+	const HEX_RE = /^#[0-9a-f]{6}$/i;
+	let allValid = $derived(colors.every((c) => HEX_RE.test(c)) && colors.length > 0);
 
 	function send(msg: UiToCode) {
 		parent.postMessage({ pluginMessage: msg }, '*');
 	}
 
+	function addColor() {
+		colors = [...colors, '#888888'];
+	}
+
+	function removeColor(i: number) {
+		if (colors.length <= 1) return;
+		colors = colors.filter((_, idx) => idx !== i);
+	}
+
+	function setColor(i: number, hex: string) {
+		colors = colors.map((c, idx) => (idx === i ? hex : c));
+	}
+
 	function generate() {
-		const payload: GenerateFoundationsPayload = {
-			primaryHex,
-			accentHex,
-			includeSemantic,
-			typeRatio,
-			fontFamily
-		};
+		const payload: GenerateFoundationsPayload = { colors, typeRatio, fontFamily };
 		foundationsBusy = true;
 		send({ type: 'generate-foundations', payload });
 	}
@@ -60,7 +59,7 @@
 				fonts = msg.families;
 				break;
 			case 'restored':
-				if (msg.primaryHex) primaryHex = msg.primaryHex;
+				if (msg.colors && msg.colors.length > 0) colors = msg.colors;
 				if (msg.fontFamily) fontFamily = msg.fontFamily;
 				break;
 			case 'error':
@@ -87,20 +86,28 @@
 	</header>
 
 	<section class="form">
-		<ColorPicker label="primary" value={primaryHex} onchange={(v) => (primaryHex = v)} />
-
-		<ColorPicker
-			label="accent (optional)"
-			value={accentHex ?? '#888888'}
-			onchange={(v) => (accentHex = v)}
-			clearable={accentHex !== null}
-			onclear={() => (accentHex = null)}
-		/>
-
-		<label class="check">
-			<input type="checkbox" bind:checked={includeSemantic} />
-			<span>include semantic colors (success, warn, error, info)</span>
-		</label>
+		<div class="colors">
+			<div class="colors-head">
+				<span>colors</span>
+				<button type="button" class="add" onclick={addColor}>+ add color</button>
+			</div>
+			{#each colors as color, i (i)}
+				<div class="slot">
+					<div class="slot-picker">
+						<ColorPicker
+							label={colorRoleName(i)}
+							value={color}
+							onchange={(v) => setColor(i, v)}
+						/>
+					</div>
+					{#if colors.length > 1}
+						<button type="button" class="remove" onclick={() => removeColor(i)} aria-label="remove">
+							−
+						</button>
+					{/if}
+				</div>
+			{/each}
+		</div>
 
 		<label>
 			<span>font family</span>
@@ -126,26 +133,8 @@
 		</label>
 	</section>
 
-	{#if palette}
-		<section class="preview">
-			<ScalePreview label="primary" scale={palette.primary} />
-			{#if palette.accent}
-				<ScalePreview label="accent" scale={palette.accent} />
-			{/if}
-			<ScalePreview label="neutral" scale={palette.neutral} />
-			{#if palette.semantic}
-				<ScalePreview label="success" scale={palette.semantic.success} />
-				<ScalePreview label="warn" scale={palette.semantic.warn} />
-				<ScalePreview label="error" scale={palette.semantic.error} />
-				<ScalePreview label="info" scale={palette.semantic.info} />
-			{/if}
-		</section>
-	{:else}
-		<p class="muted">invalid color</p>
-	{/if}
-
 	<section class="actions">
-		<button class="primary" onclick={generate} disabled={foundationsBusy || !palette}>
+		<button class="primary" onclick={generate} disabled={foundationsBusy || !allValid}>
 			{foundationsBusy ? 'generating…' : 'generate foundations'}
 		</button>
 		<button onclick={insertGuide} disabled={styleGuideBusy}>
@@ -180,25 +169,40 @@
 	.form {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
+		gap: 12px;
 	}
-	.check {
-		flex-direction: row;
-		align-items: center;
-		gap: 8px;
-		color: var(--text);
-		font-size: 12px;
-	}
-	.check input {
-		margin: 0;
-	}
-	.preview {
+	.colors {
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		max-height: 240px;
-		overflow-y: auto;
-		padding-right: 4px;
+	}
+	.colors-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		font-size: 11px;
+		color: var(--muted);
+	}
+	.colors-head .add {
+		padding: 4px 8px;
+		font-size: 11px;
+	}
+	.slot {
+		display: flex;
+		gap: 6px;
+		align-items: flex-end;
+	}
+	.slot-picker {
+		flex: 1;
+	}
+	.remove {
+		flex: none;
+		padding: 0 10px;
+		height: 28px;
+		font-size: 14px;
+		line-height: 1;
+		align-self: flex-end;
+		margin-bottom: 0;
 	}
 	.actions {
 		display: flex;
