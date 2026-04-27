@@ -2,8 +2,6 @@ import { buildTypeScale } from '../tokens/typography';
 import type { TypeName, TypeStep } from '../tokens/typography';
 import { SHADOW_TOKENS, type ShadowLayer } from '../tokens/shadows';
 
-const FONT: FontName = { family: 'Inter', style: 'Regular' };
-
 async function removeStylesByPrefix(prefix: string, kind: 'text' | 'effect'): Promise<void> {
 	const all =
 		kind === 'text'
@@ -14,8 +12,21 @@ async function removeStylesByPrefix(prefix: string, kind: 'text' | 'effect'): Pr
 	}
 }
 
-export async function applyTextStyles(ratio: 1.2 | 1.333): Promise<Map<TypeName, TextStyle>> {
-	await figma.loadFontAsync(FONT);
+export async function loadFamilyRegular(family: string): Promise<FontName> {
+	const font: FontName = { family, style: 'Regular' };
+	try {
+		await figma.loadFontAsync(font);
+		return font;
+	} catch {
+		throw new Error(`Font not available: ${family} Regular`);
+	}
+}
+
+export async function applyTextStyles(
+	ratio: 1.2 | 1.333,
+	fontFamily: string
+): Promise<Map<TypeName, TextStyle>> {
+	const font = await loadFamilyRegular(fontFamily);
 	await removeStylesByPrefix('text/', 'text');
 
 	const result = new Map<TypeName, TextStyle>();
@@ -23,7 +34,7 @@ export async function applyTextStyles(ratio: 1.2 | 1.333): Promise<Map<TypeName,
 	for (const step of scale) {
 		const style = figma.createTextStyle();
 		style.name = `text/${step.name}`;
-		style.fontName = FONT;
+		style.fontName = font;
 		style.fontSize = step.fontSize;
 		style.lineHeight = { unit: 'PIXELS', value: step.lineHeight };
 		result.set(step.name, style);

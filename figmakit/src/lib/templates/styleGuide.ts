@@ -1,12 +1,11 @@
 import type { TypeName } from '../tokens/typography';
-import { TYPE_NAMES, buildTypeScale } from '../tokens/typography';
+import { buildTypeScale } from '../tokens/typography';
 import { RADIUS_TOKENS, SPACE_STEPS, type RadiusName, type SpaceStep } from '../tokens/spacing';
 import { SHADOW_TOKENS } from '../tokens/shadows';
 import { STEPS } from '../palette/types';
 import type { SemanticAliasName } from '../figma/variables';
+import { loadFamilyRegular } from '../figma/styles';
 import { ICONS } from './icons';
-
-const FONT: FontName = { family: 'Inter', style: 'Regular' };
 
 export interface StyleGuideContext {
 	colorByName: Map<string, Variable>;
@@ -18,6 +17,8 @@ export interface StyleGuideContext {
 	typeRatio: 1.2 | 1.333;
 	hasAccent: boolean;
 	hasSemantic: boolean;
+	fontFamily: string;
+	font: FontName;
 }
 
 const STYLE_GUIDE_NAME = 'figmakit/style-guide';
@@ -53,7 +54,7 @@ function hstack(name: string, opts: Partial<FrameNode> = {}): FrameNode {
 
 function text(content: string, size: number, ctx: StyleGuideContext): TextNode {
 	const t = figma.createText();
-	t.fontName = FONT;
+	t.fontName = ctx.font;
 	t.characters = content;
 	t.fontSize = size;
 	t.fills = fillFromVar(ctx.semanticAliases.get('text'));
@@ -67,9 +68,7 @@ function mutedText(content: string, size: number, ctx: StyleGuideContext): TextN
 }
 
 function sectionTitle(content: string, ctx: StyleGuideContext): TextNode {
-	const t = text(content, 24, ctx);
-	t.fontName = { family: 'Inter', style: 'Regular' };
-	return t;
+	return text(content, 24, ctx);
 }
 
 function swatch(varName: string, ctx: StyleGuideContext): FrameNode {
@@ -88,7 +87,7 @@ function swatch(varName: string, ctx: StyleGuideContext): FrameNode {
 	cell.counterAxisSizingMode = 'FIXED';
 	cell.primaryAxisAlignItems = 'MAX';
 	const label = figma.createText();
-	label.fontName = FONT;
+	label.fontName = ctx.font;
 	label.fontSize = 10;
 	const step = varName.split('/')[1];
 	label.characters = step;
@@ -152,21 +151,23 @@ function buildTypographySection(ctx: StyleGuideContext): FrameNode {
 	return section;
 }
 
+const SPACING_VISUAL_FACTOR = 6;
+
 function buildSpacingSection(ctx: StyleGuideContext): FrameNode {
 	const section = vstack('spacing', { itemSpacing: 16 });
 	section.appendChild(sectionTitle('Spacing', ctx));
-	const list = vstack('space-list', { itemSpacing: 6 });
+	const list = vstack('space-list', { itemSpacing: 4 });
 	for (const step of SPACE_STEPS) {
 		const variable = ctx.spaceByStep.get(step as SpaceStep);
 		if (!variable) continue;
 		const row = hstack(`space-${step}`, { itemSpacing: 12, counterAxisAlignItems: 'CENTER' });
-		const label = mutedText(`space-${step}`, 11, ctx);
-		label.resize(80, label.height);
+		const label = mutedText(String(step), 12, ctx);
+		label.resize(36, label.height);
 		label.layoutSizingHorizontal = 'FIXED';
 		const bar = figma.createFrame();
 		bar.name = `bar-${step}`;
 		bar.fills = fillFromVar(ctx.semanticAliases.get('accent'));
-		bar.resize(Math.max(2, step * 4 + 1), 16);
+		bar.resize(Math.max(8, step * SPACING_VISUAL_FACTOR), 24);
 		row.appendChild(label);
 		row.appendChild(bar);
 		list.appendChild(row);
@@ -259,7 +260,7 @@ async function removeExistingStyleGuide(): Promise<void> {
 }
 
 export async function buildStyleGuide(ctx: StyleGuideContext): Promise<FrameNode> {
-	await figma.loadFontAsync(FONT);
+	await loadFamilyRegular(ctx.fontFamily);
 	await removeExistingStyleGuide();
 
 	const root = vstack(STYLE_GUIDE_NAME, {

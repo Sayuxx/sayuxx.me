@@ -7,8 +7,9 @@
 	let primaryHex = $state('#3b82f6');
 	let accentHex = $state<string | null>(null);
 	let includeSemantic = $state(true);
-	let spacingBase = $state<4 | 8>(4);
 	let typeRatio = $state<1.2 | 1.333>(1.2);
+	let fontFamily = $state('Inter');
+	let fonts = $state<string[]>([]);
 
 	let foundationsBusy = $state(false);
 	let styleGuideBusy = $state(false);
@@ -31,8 +32,8 @@
 			primaryHex,
 			accentHex,
 			includeSemantic,
-			spacingBase,
-			typeRatio
+			typeRatio,
+			fontFamily
 		};
 		foundationsBusy = true;
 		send({ type: 'generate-foundations', payload });
@@ -55,8 +56,12 @@
 				styleGuideBusy = false;
 				flash('style guide inserted');
 				break;
+			case 'fonts':
+				fonts = msg.families;
+				break;
 			case 'restored':
 				if (msg.primaryHex) primaryHex = msg.primaryHex;
+				if (msg.fontFamily) fontFamily = msg.fontFamily;
 				break;
 			case 'error':
 				foundationsBusy = false;
@@ -72,6 +77,7 @@
 	}
 
 	send({ type: 'ping' });
+	send({ type: 'request-fonts' });
 </script>
 
 <main>
@@ -96,23 +102,28 @@
 			<span>include semantic colors (success, warn, error, info)</span>
 		</label>
 
-		<div class="grid">
-			<label>
-				<span>spacing base</span>
-				<select bind:value={spacingBase}>
-					<option value={4}>4px</option>
-					<option value={8}>8px</option>
-				</select>
-			</label>
+		<label>
+			<span>font family</span>
+			<input
+				list="font-families"
+				bind:value={fontFamily}
+				placeholder="type to search"
+				spellcheck="false"
+			/>
+			<datalist id="font-families">
+				{#each fonts as family (family)}
+					<option value={family}></option>
+				{/each}
+			</datalist>
+		</label>
 
-			<label>
-				<span>type scale</span>
-				<select bind:value={typeRatio}>
-					<option value={1.2}>1.200 (minor third)</option>
-					<option value={1.333}>1.333 (perfect fourth)</option>
-				</select>
-			</label>
-		</div>
+		<label>
+			<span>type scale</span>
+			<select bind:value={typeRatio}>
+				<option value={1.2}>1.200 (minor third)</option>
+				<option value={1.333}>1.333 (perfect fourth)</option>
+			</select>
+		</label>
 	</section>
 
 	{#if palette}
@@ -169,11 +180,6 @@
 	.form {
 		display: flex;
 		flex-direction: column;
-		gap: 10px;
-	}
-	.grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
 		gap: 10px;
 	}
 	.check {

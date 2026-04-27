@@ -45,7 +45,7 @@ export async function lookupExisting(): Promise<LookupResult> {
 			const [kind, key] = v.name.split('/');
 			if (kind === 'space') {
 				const n = parseInt(key, 10);
-				if (SPACE_STEPS.includes(n as SpaceStep)) spaceByStep.set(n as SpaceStep, v);
+				if ((SPACE_STEPS as readonly number[]).includes(n)) spaceByStep.set(n as SpaceStep, v);
 			} else if (kind === 'radius') {
 				if (key in RADIUS_TOKENS) radiusByName.set(key as RadiusName, v);
 			}

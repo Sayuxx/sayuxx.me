@@ -1,6 +1,6 @@
 import type { ColorScale, PaletteSet, SemanticName, Step } from '../palette/types';
 import { STEPS } from '../palette/types';
-import { RADIUS_TOKENS, SPACE_STEPS, spaceValue, type RadiusName, type SpaceStep } from '../tokens/spacing';
+import { RADIUS_TOKENS, SPACE_STEPS, type RadiusName, type SpaceStep } from '../tokens/spacing';
 import { VARIABLE_COLLECTIONS } from '../messaging';
 import { hexToRgb } from './color';
 
@@ -157,7 +157,7 @@ export async function applyPaletteVariables(palette: PaletteSet): Promise<{
 	return { collection, colorByName, semanticAliases };
 }
 
-export async function applySpacingVariables(base: 4 | 8): Promise<{
+export async function applySpacingVariables(): Promise<{
 	collection: VariableCollection;
 	spaceByStep: Map<SpaceStep, Variable>;
 	radiusByName: Map<RadiusName, Variable>;
@@ -170,7 +170,7 @@ export async function applySpacingVariables(base: 4 | 8): Promise<{
 	const spaceByStep = new Map<SpaceStep, Variable>();
 	for (const step of SPACE_STEPS) {
 		const v = figma.variables.createVariable(`space/${step}`, collection, 'FLOAT');
-		v.setValueForMode(modeId, spaceValue(step, base));
+		v.setValueForMode(modeId, step);
 		spaceByStep.set(step, v);
 	}
 
