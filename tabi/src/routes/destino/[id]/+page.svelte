@@ -474,9 +474,6 @@
 	}
 
 	/* Tip section (final) */
-	.tabi-destino-tip-section {
-		max-width: 44rem;
-	}
 	.tabi-destino-tip-card {
 		padding: 1.5rem 1.75rem;
 		background-color: color-mix(in oklch, var(--color-sage) 16%, transparent);

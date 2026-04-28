@@ -22,59 +22,71 @@
 	};
 </script>
 
-<article class="tabi-destino tabi-anim-in">
-	<div class="tabi-destino-photo">
-		<img src={photo} alt={destino.nome} loading="lazy" />
-		<div class="tabi-destino-photo-overlay"></div>
-		<span class="tabi-destino-kanji tabi-jp" aria-hidden="true">{destino.kanji}</span>
-		<span class="tabi-destino-match">{compatibility}% match</span>
-	</div>
+<a class="tabi-destino-link tabi-anim-in" href="{base}/destino/{destino.id}">
+	<article class="tabi-destino">
+		<div class="tabi-destino-photo">
+			<img src={photo} alt={destino.nome} loading="lazy" />
+			<div class="tabi-destino-photo-overlay"></div>
+			<span class="tabi-destino-kanji tabi-jp" aria-hidden="true">{destino.kanji}</span>
+			<span class="tabi-destino-match">{compatibility}% match</span>
+		</div>
 
-	<div class="tabi-destino-body">
-		<header class="tabi-destino-header">
+		<div class="tabi-destino-body">
+			<header class="tabi-destino-header">
+				<div>
+					<h3 class="tabi-destino-name tabi-display">{destino.nome}</h3>
+					<div class="tabi-destino-jp tabi-jp">{destino.nomejp}</div>
+				</div>
+			</header>
+
+			<p class="tabi-destino-desc">{destino.descricao}</p>
+
+			<div class="tabi-destino-meta">
+				<div class="tabi-destino-meta-row">
+					<span class="tabi-destino-meta-label">Melhor época</span>
+					<span class="tabi-destino-meta-value">
+						{destino.melhorEpoca.map((e) => epocaLabel[e]).join(' · ')}
+					</span>
+				</div>
+				<div class="tabi-destino-meta-row">
+					<span class="tabi-destino-meta-label">Custo diário</span>
+					<span class="tabi-destino-meta-value">{budgetLabel(destino.custoDiario)}</span>
+				</div>
+			</div>
+
 			<div>
-				<h3 class="tabi-destino-name tabi-display">{destino.nome}</h3>
-				<div class="tabi-destino-jp tabi-jp">{destino.nomejp}</div>
+				<div class="tabi-destino-pontos-label tabi-eyebrow">Pontos principais</div>
+				<ul class="tabi-destino-pontos">
+					{#each destino.pontosPrincipais as ponto (ponto)}
+						<li>{ponto}</li>
+					{/each}
+				</ul>
 			</div>
-		</header>
 
-		<p class="tabi-destino-desc">{destino.descricao}</p>
-
-		<div class="tabi-destino-meta">
-			<div class="tabi-destino-meta-row">
-				<span class="tabi-destino-meta-label">Melhor época</span>
-				<span class="tabi-destino-meta-value">
-					{destino.melhorEpoca.map((e) => epocaLabel[e]).join(' · ')}
-				</span>
+			<div class="tabi-destino-dica">
+				<span class="tabi-destino-dica-tag tabi-jp">tip</span>
+				<p>{destino.dicaLocal}</p>
 			</div>
-			<div class="tabi-destino-meta-row">
-				<span class="tabi-destino-meta-label">Custo diário</span>
-				<span class="tabi-destino-meta-value">{budgetLabel(destino.custoDiario)}</span>
-			</div>
-		</div>
 
-		<div>
-			<div class="tabi-destino-pontos-label tabi-eyebrow">Pontos principais</div>
-			<ul class="tabi-destino-pontos">
-				{#each destino.pontosPrincipais as ponto (ponto)}
-					<li>{ponto}</li>
-				{/each}
-			</ul>
+			<span class="tabi-destino-explorar">
+				Explorar {destino.nome}
+				<span aria-hidden="true">→</span>
+			</span>
 		</div>
-
-		<div class="tabi-destino-dica">
-			<span class="tabi-destino-dica-tag tabi-jp">tip</span>
-			<p>{destino.dicaLocal}</p>
-		</div>
-
-		<a class="tabi-destino-explorar" href="{base}/destino/{destino.id}">
-			Explorar {destino.nome}
-			<span aria-hidden="true">→</span>
-		</a>
-	</div>
-</article>
+	</article>
+</a>
 
 <style>
+	.tabi-destino-link {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+		border-radius: var(--radius-lg);
+	}
+	.tabi-destino-link:focus-visible {
+		outline: none;
+		box-shadow: var(--ring-red);
+	}
 	.tabi-destino {
 		position: relative;
 		display: flex;
@@ -89,7 +101,7 @@
 			box-shadow 220ms var(--ease-out),
 			border-color 220ms var(--ease-out);
 	}
-	.tabi-destino:hover {
+	.tabi-destino-link:hover .tabi-destino {
 		transform: translateY(-4px);
 		border-color: var(--color-red);
 		box-shadow: var(--shadow-lg);
@@ -106,7 +118,7 @@
 		object-fit: cover;
 		transition: transform 600ms var(--ease-out);
 	}
-	.tabi-destino:hover .tabi-destino-photo img {
+	.tabi-destino-link:hover .tabi-destino-photo img {
 		transform: scale(1.04);
 	}
 	.tabi-destino-photo-overlay {
@@ -254,23 +266,14 @@
 		background-color: transparent;
 		border: 1.5px solid color-mix(in oklch, var(--color-navy) 22%, transparent);
 		border-radius: var(--radius-full);
-		text-decoration: none;
 		transition:
 			background-color 200ms var(--ease-out),
 			color 200ms var(--ease-out),
-			border-color 200ms var(--ease-out),
-			transform 140ms var(--ease-out);
+			border-color 200ms var(--ease-out);
 	}
-	.tabi-destino-explorar:hover {
+	.tabi-destino-link:hover .tabi-destino-explorar {
 		background-color: var(--color-red);
 		border-color: var(--color-red);
 		color: var(--color-cream);
-	}
-	.tabi-destino-explorar:active {
-		transform: translateY(1px);
-	}
-	.tabi-destino-explorar:focus-visible {
-		outline: none;
-		box-shadow: var(--ring-red);
 	}
 </style>
