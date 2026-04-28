@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { base } from '$app/paths';
 	import type { Destino } from '$lib/types';
 	import { budgetLabel } from '$lib/matching';
 
@@ -65,6 +66,11 @@
 			<span class="tabi-destino-dica-tag tabi-jp">tip</span>
 			<p>{destino.dicaLocal}</p>
 		</div>
+
+		<a class="tabi-destino-explorar" href="{base}/destino/{destino.id}">
+			Explorar {destino.nome}
+			<span aria-hidden="true">→</span>
+		</a>
 	</div>
 </article>
 
@@ -233,5 +239,38 @@
 		letter-spacing: 0.12em;
 		color: var(--color-sage);
 		padding-top: 0.1rem;
+	}
+	.tabi-destino-explorar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		min-height: 44px;
+		padding: 0.625rem 1rem;
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--color-navy);
+		background-color: transparent;
+		border: 1.5px solid color-mix(in oklch, var(--color-navy) 22%, transparent);
+		border-radius: var(--radius-full);
+		text-decoration: none;
+		transition:
+			background-color 200ms var(--ease-out),
+			color 200ms var(--ease-out),
+			border-color 200ms var(--ease-out),
+			transform 140ms var(--ease-out);
+	}
+	.tabi-destino-explorar:hover {
+		background-color: var(--color-red);
+		border-color: var(--color-red);
+		color: var(--color-cream);
+	}
+	.tabi-destino-explorar:active {
+		transform: translateY(1px);
+	}
+	.tabi-destino-explorar:focus-visible {
+		outline: none;
+		box-shadow: var(--ring-red);
 	}
 </style>

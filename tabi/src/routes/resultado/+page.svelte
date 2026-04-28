@@ -56,22 +56,11 @@
 			</div>
 		</section>
 
-		<section class="tabi-resultado-cta">
-			<div class="tabi-resultado-cta-card">
-				<div>
-					<div class="tabi-eyebrow">Próximo passo</div>
-					<h3 class="tabi-display tabi-resultado-cta-title">Roteiro completo (em breve)</h3>
-					<p class="tabi-resultado-cta-desc">
-						O gerador de roteiro dia-a-dia chega na próxima fase. Por enquanto, você pode revisar
-						suas respostas e refazer o quiz.
-					</p>
-				</div>
-				<div class="tabi-resultado-cta-actions">
-					<button type="button" class="tabi-btn tabi-btn-ghost" onclick={restart}>
-						↺ Refazer quiz
-					</button>
-				</div>
-			</div>
+		<section class="tabi-resultado-restart">
+			<p class="tabi-resultado-restart-label">Quer outro perfil?</p>
+			<button type="button" class="tabi-btn tabi-btn-ghost" onclick={restart}>
+				↺ Refazer quiz
+			</button>
 		</section>
 	</main>
 {:else}
@@ -129,48 +118,17 @@
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}
-	.tabi-resultado-cta {
-		display: flex;
-		justify-content: center;
-	}
-	.tabi-resultado-cta-card {
+	.tabi-resultado-restart {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
-		align-items: flex-start;
-		padding: 2rem;
-		max-width: 38rem;
-		width: 100%;
-		background-color: color-mix(in oklch, var(--color-navy) 92%, white);
-		color: var(--color-cream);
-		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-md);
+		align-items: center;
+		gap: 0.875rem;
+		padding-top: 1rem;
 	}
-	.tabi-resultado-cta-card .tabi-eyebrow {
-		color: color-mix(in oklch, var(--color-cream) 75%, var(--color-sage));
-	}
-	.tabi-resultado-cta-title {
-		font-size: 1.625rem;
-		margin: 0.25rem 0 0.5rem;
-		color: var(--color-cream);
-	}
-	.tabi-resultado-cta-desc {
+	.tabi-resultado-restart-label {
 		margin: 0;
-		font-size: 0.9375rem;
-		line-height: 1.6;
-		color: color-mix(in oklch, var(--color-cream) 80%, var(--color-sage));
-	}
-	.tabi-resultado-cta-actions {
-		display: flex;
-		gap: 0.625rem;
-	}
-	.tabi-resultado-cta-actions .tabi-btn-ghost {
-		color: var(--color-cream);
-		border-color: color-mix(in oklch, var(--color-cream) 35%, transparent);
-	}
-	.tabi-resultado-cta-actions .tabi-btn-ghost:hover {
-		background-color: color-mix(in oklch, var(--color-cream) 10%, transparent);
-		border-color: var(--color-cream);
+		font-size: 0.875rem;
+		color: color-mix(in oklch, var(--color-navy) 60%, var(--color-cream));
 	}
 	.tabi-resultado-loading {
 		flex: 1;

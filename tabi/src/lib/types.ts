@@ -57,3 +57,40 @@ export type Resposta = {
 };
 
 export const BUDGET_ORDER: Budget[] = ['economico', 'moderado', 'confortavel', 'premium'];
+
+export type AtividadeTipo =
+	| 'cultural'
+	| 'natureza'
+	| 'gastronomia'
+	| 'moderno'
+	| 'relaxamento'
+	| 'compras';
+
+export type AtividadeHorario = 'manha' | 'tarde' | 'noite';
+
+export type AtividadeCusto = 'gratuito' | 'baixo' | 'medio' | 'alto';
+
+export type Atividade = {
+	id: string;
+	destinoId: string;
+	nome: string;
+	tipo: AtividadeTipo;
+	duracao: number;
+	custo: AtividadeCusto;
+	melhorHorario: AtividadeHorario;
+	descricao: string;
+	dica?: string;
+};
+
+export type FaixaPreco = 'baixo' | 'medio' | 'alto';
+
+export type Restaurante = {
+	id: string;
+	destinoId: string;
+	nome: string;
+	especialidade: string;
+	faixaPreco: FaixaPreco;
+	precoMedio: string;
+	bairro: string;
+	notaLocal?: string;
+};
