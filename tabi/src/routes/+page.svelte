@@ -39,7 +39,7 @@
 
 		<p class="tabi-landing-lede">
 			Oito perguntas, um perfil de viajante, uma lista de destinos casados com o seu jeito de
-			viajar. Sem cadastro, sem IA, sem custo — só você e o Japão certo pra você.
+			viajar. 
 		</p>
 
 		<div class="tabi-landing-cta">
