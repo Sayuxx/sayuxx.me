@@ -1,3 +1,5 @@
 node_modules
 taxometro/build
 taxometro/.svelte-kit
+tabi/build
+tabi/.svelte-kit

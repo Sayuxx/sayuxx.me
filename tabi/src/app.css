@@ -1,0 +1,247 @@
+@import 'tailwindcss';
+
+:root {
+	--color-sage: #7e9695;
+	--color-red: #ba474a;
+	--color-cream: #eeedd7;
+	--color-navy: #252a38;
+
+	--color-sage-soft: color-mix(in oklch, var(--color-sage) 35%, var(--color-cream));
+	--color-navy-soft: color-mix(in oklch, var(--color-navy) 70%, var(--color-cream));
+
+	--radius-sm: 0.5rem;
+	--radius-md: 0.875rem;
+	--radius-lg: 1.25rem;
+	--radius-full: 999px;
+
+	--shadow-sm: 0 1px 2px rgba(37, 42, 56, 0.05),
+				 0 2px 8px rgba(37, 42, 56, 0.06);
+	--shadow-md: 0 6px 18px rgba(37, 42, 56, 0.08),
+				 0 2px 6px rgba(37, 42, 56, 0.05);
+	--shadow-lg: 0 18px 38px -12px rgba(37, 42, 56, 0.20),
+				 0 4px 12px rgba(37, 42, 56, 0.08);
+
+	--ring-red: 0 0 0 3px rgba(186, 71, 74, 0.28);
+	--ring-sage: 0 0 0 3px rgba(126, 150, 149, 0.32);
+
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+	--font-display: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+	--font-sans: 'Satoshi', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html, body {
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
+body {
+	min-height: 100dvh;
+	color: var(--color-navy);
+	background-color: var(--color-cream);
+	background-image:
+		radial-gradient(60% 50% at 90% 0%,
+			color-mix(in oklch, var(--color-sage) 18%, transparent) 0%,
+			transparent 65%),
+		radial-gradient(50% 40% at 10% 100%,
+			color-mix(in oklch, var(--color-red) 10%, transparent) 0%,
+			transparent 65%);
+	background-attachment: fixed;
+}
+
+/* === Typography utilities === */
+
+.tabi-display {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	line-height: 1.05;
+}
+
+.tabi-jp {
+	font-family: var(--font-display);
+	font-feature-settings: 'palt';
+}
+
+.tabi-eyebrow {
+	font-family: var(--font-display);
+	font-size: 0.75rem;
+	font-weight: 500;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: color-mix(in oklch, var(--color-navy) 60%, var(--color-cream));
+}
+
+/* === Buttons === */
+
+.tabi-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	min-height: 48px;
+	padding: 0.75rem 1.5rem;
+	border-radius: var(--radius-full);
+	font-family: var(--font-sans);
+	font-size: 0.9375rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	cursor: pointer;
+	transition:
+		transform 140ms var(--ease-out),
+		box-shadow 200ms var(--ease-out),
+		background-color 200ms var(--ease-out),
+		color 200ms var(--ease-out),
+		border-color 200ms var(--ease-out);
+}
+.tabi-btn:focus-visible {
+	outline: none;
+	box-shadow: var(--ring-red);
+}
+.tabi-btn:active:not(:disabled) {
+	transform: translateY(1px);
+}
+.tabi-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.tabi-btn-primary {
+	background-color: var(--color-red);
+	color: var(--color-cream);
+	box-shadow: var(--shadow-sm);
+}
+.tabi-btn-primary:hover:not(:disabled) {
+	background-color: color-mix(in oklch, var(--color-red) 88%, black);
+	box-shadow: var(--shadow-md);
+}
+
+.tabi-btn-ghost {
+	background-color: transparent;
+	color: var(--color-navy);
+	border: 1px solid color-mix(in oklch, var(--color-navy) 25%, transparent);
+}
+.tabi-btn-ghost:hover:not(:disabled) {
+	border-color: var(--color-navy);
+	background-color: color-mix(in oklch, var(--color-navy) 5%, transparent);
+}
+
+/* === Cards === */
+
+.tabi-card {
+	background-color: color-mix(in oklch, var(--color-cream) 80%, white);
+	border: 1px solid color-mix(in oklch, var(--color-navy) 12%, transparent);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-sm);
+	transition:
+		transform 220ms var(--ease-out),
+		box-shadow 220ms var(--ease-out),
+		border-color 220ms var(--ease-out);
+}
+.tabi-card:hover {
+	box-shadow: var(--shadow-md);
+}
+
+/* Quiz cards (clickable) */
+.tabi-quiz-card {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.875rem;
+	width: 100%;
+	padding: 1rem 1.125rem;
+	text-align: left;
+	background-color: color-mix(in oklch, var(--color-cream) 70%, white);
+	border: 1.5px solid color-mix(in oklch, var(--color-navy) 14%, transparent);
+	border-radius: var(--radius-md);
+	color: var(--color-navy);
+	cursor: pointer;
+	transition:
+		transform 180ms var(--ease-out),
+		border-color 200ms var(--ease-out),
+		background-color 200ms var(--ease-out),
+		box-shadow 200ms var(--ease-out);
+}
+.tabi-quiz-card:hover {
+	border-color: var(--color-sage);
+	transform: translateY(-2px);
+	box-shadow: var(--shadow-sm);
+}
+.tabi-quiz-card:focus-visible {
+	outline: none;
+	box-shadow: var(--ring-sage);
+	border-color: var(--color-sage);
+}
+.tabi-quiz-card[aria-pressed='true'] {
+	border-color: var(--color-red);
+	background-color: color-mix(in oklch, var(--color-red) 8%, var(--color-cream));
+	box-shadow: var(--shadow-sm);
+}
+
+/* === Decorative kanji === */
+.tabi-kanji-deco {
+	display: block;
+	font-family: var(--font-display);
+	font-weight: 800;
+	color: var(--color-sage);
+	opacity: 0.10;
+	pointer-events: none;
+	user-select: none;
+	line-height: 1;
+	text-align: center;
+}
+
+/* === Stagger entrance === */
+@media (prefers-reduced-motion: no-preference) {
+	.tabi-stagger > * {
+		animation: tabi-fade-up 600ms var(--ease-out) both;
+	}
+	.tabi-stagger > *:nth-child(1) { animation-delay: 0ms; }
+	.tabi-stagger > *:nth-child(2) { animation-delay: 120ms; }
+	.tabi-stagger > *:nth-child(3) { animation-delay: 240ms; }
+	.tabi-stagger > *:nth-child(4) { animation-delay: 360ms; }
+	.tabi-stagger > *:nth-child(5) { animation-delay: 480ms; }
+	.tabi-stagger > *:nth-child(6) { animation-delay: 600ms; }
+
+	.tabi-anim-in {
+		animation: tabi-fade-up 480ms var(--ease-out) both;
+	}
+
+	.tabi-anim-reveal {
+		animation: tabi-scale-in 800ms var(--ease-out) both;
+	}
+}
+
+@keyframes tabi-fade-up {
+	from { opacity: 0; transform: translateY(12px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tabi-scale-in {
+	from { opacity: 0; transform: scale(0.92); }
+	to   { opacity: 1; transform: scale(1); }
+}
+
+/* === Sakura petals === */
+@media (prefers-reduced-motion: reduce) {
+	.tabi-petal { display: none !important; }
+}
+
+@theme inline {
+	--color-sage: var(--color-sage);
+	--color-red: var(--color-red);
+	--color-cream: var(--color-cream);
+	--color-navy: var(--color-navy);
+	--color-sage-soft: var(--color-sage-soft);
+	--color-navy-soft: var(--color-navy-soft);
+
+	--font-display: var(--font-display);
+	--font-sans: var(--font-sans);
+
+	--radius-sm: var(--radius-sm);
+	--radius-md: var(--radius-md);
+	--radius-lg: var(--radius-lg);
+	--radius-full: var(--radius-full);
+}

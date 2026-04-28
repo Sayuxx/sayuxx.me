@@ -27,12 +27,20 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install dependencies
+      - name: Install dependencies (taxometro)
         working-directory: taxometro
         run: npm ci
 
       - name: Build taxometro
         working-directory: taxometro
+        run: npm run build
+
+      - name: Install dependencies (tabi)
+        working-directory: tabi
+        run: npm ci
+
+      - name: Build tabi
+        working-directory: tabi
         run: npm run build
 
       - name: Assemble site
@@ -41,6 +49,7 @@ jobs:
           cp index.html _site/
           cp CNAME _site/
           cp -r taxometro/build _site/taxometro
+          cp -r tabi/build _site/tabi
 
       - uses: actions/configure-pages@v5
 
